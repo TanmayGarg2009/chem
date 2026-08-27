@@ -26,75 +26,75 @@ export interface MechanismData {
 export const MECHANISMS_DB: Record<string, MechanismData> = {
   sn1: {
     title: "SN1 Mechanism: Hydrolysis of tert-Butyl Bromide",
-    description: "Unimolecular nucleophilic substitution proceeding via a planar carbocation intermediate.",
+    description: "Unimolecular nucleophilic substitution proceeding via a planar carbocation intermediate with racemization.",
     steps: [
       {
         stepNum: 1,
         title: "Step 1: Heterolytic C–Br Bond Cleavage (Rate Determining Step)",
-        reactants: ["tert-Butyl Bromide ((CH3)3C-Br)"],
+        reactants: ["tert-Butyl Bromide", "((CH3)3C-Br)"],
         conditions: "Slow (r.d.s)\nPolar protic solvent",
-        products: ["Planar 3° Carbocation ((CH3)3C⁺)", "Bromide Leaving Group (Br⁻)"],
-        note: "C-Br bond breaks heterolytically. The tertiary carbocation achieves sp2 planar geometry."
+        products: ["Planar 3° Carbocation ((CH3)3C⁺)", "+ Bromide Leaving Group (Br⁻)"],
+        note: "C-Br bond cleaves heterolytically. The tertiary carbocation achieves sp2 planar trigonal geometry."
       },
       {
         stepNum: 2,
         title: "Step 2: Nucleophilic Attack of Water",
         reactants: ["(CH3)3C⁺ Carbocation", "H2O (Nucleophile)"],
-        conditions: "Fast\nFront/Back attack",
-        products: ["Protonated tert-Butanol ((CH3)3C-OH2⁺)"],
-        note: "H2O lone pair attacks the empty p-orbital equally from top or bottom face (racemization)."
+        conditions: "Fast\nFront/Back attack (50:50)",
+        products: ["Protonated tert-Butanol", "((CH3)3C-OH2⁺)"],
+        note: "H2O lone pair attacks the empty p-orbital equally from top or bottom face, resulting in racemization."
       },
       {
         stepNum: 3,
         title: "Step 3: Deprotonation to Neutral Alcohol",
-        reactants: ["(CH3)3C-OH2⁺", "H2O"],
-        conditions: "Fast acid-base transfer",
-        products: ["tert-Butanol ((CH3)3C-OH)", "Hydronium Ion (H3O⁺)"],
-        note: "Solvent water molecule abstracts proton to yield neutral tert-butyl alcohol product."
+        reactants: ["(CH3)3C-OH2⁺", "H2O (Solvent Base)"],
+        conditions: "Fast acid-base transfer\n- H3O⁺",
+        products: ["tert-Butanol ((CH3)3C-OH)", "+ Hydronium Ion (H3O⁺)"],
+        note: "Solvent water molecule abstracts the proton to yield the neutral tertiary alcohol product."
       }
     ]
   },
   sn2: {
     title: "SN2 Mechanism: Hydroxide Substitution of Bromomethane",
-    description: "Bimolecular concerted nucleophilic substitution with complete inversion of configuration (Walden Inversion).",
+    description: "Bimolecular concerted nucleophilic substitution with 100% inversion of configuration (Walden Inversion).",
     steps: [
       {
         stepNum: 1,
         title: "Concerted Backside Attack & Walden Inversion",
         reactants: ["Hydroxide Ion (OH⁻)", "Bromomethane (CH3-Br)"],
         conditions: "180° Backside Attack\nTransition State: [HO···CH3···Br]‡",
-        products: ["Methanol (CH3-OH, Inverted)", "Bromide Ion (Br⁻)"],
-        note: "Nucleophile attacks at 180° to leaving group through a pentacoordinated transition state with 100% inversion."
+        products: ["Methanol (CH3-OH, Inverted)", "+ Bromide Ion (Br⁻)"],
+        note: "Nucleophile attacks at 180° to leaving group through a pentacoordinated transition state with 100% configuration inversion."
       }
     ]
   },
   eas: {
     title: "Electrophilic Aromatic Substitution (EAS): Bromination of Benzene",
-    description: "Electrophilic aromatic substitution via Arenium ion (Wheland / Sigma complex) resonance hybrid.",
+    description: "Electrophilic aromatic substitution proceeding via Arenium ion (Wheland / Sigma complex) resonance hybrid.",
     steps: [
       {
         stepNum: 1,
         title: "Step 1: Generation of Strong Electrophile (Br⁺)",
         reactants: ["Bromine (Br2)", "FeBr3 (Lewis Acid Catalyst)"],
-        conditions: "Complexation & Polarization",
-        products: ["Bromonium Ion (Br⁺)", "[FeBr4]⁻ Complex"],
-        note: "Lewis acid FeBr3 coordinates with Br2, generating the reactive electrophilic Br+ species."
+        conditions: "Lewis Acid Complexation\nPolarization",
+        products: ["Bromonium Electrophile (Br⁺)", "+ [FeBr4]⁻ Counterion"],
+        note: "Lewis acid FeBr3 coordinates with Br2, polarizing the Br-Br bond and generating the reactive electrophilic Br+ species."
       },
       {
         stepNum: 2,
         title: "Step 2: Attack on Benzene Ring (Sigma Complex Formation)",
-        reactants: ["Benzene (C6H6)", "Br⁺ Electrophile"],
-        conditions: "Slow (r.d.s)\nLoss of aromaticity",
-        products: ["Arenium Ion / Sigma Complex (C6H6Br⁺)"],
-        note: "Aromatic pi-electrons attack Br+, forming a resonance-stabilized non-aromatic carbocation intermediate."
+        reactants: ["Benzene Ring (C6H6)", "Br⁺ Electrophile"],
+        conditions: "Slow (r.d.s)\nTemporary loss of aromaticity",
+        products: ["Arenium Ion / Wheland Intermediate", "(Sigma Complex, C6H6Br⁺)"],
+        note: "Aromatic pi-electrons attack Br+, forming a resonance-stabilized non-aromatic cyclohexadienyl cation intermediate."
       },
       {
         stepNum: 3,
         title: "Step 3: Deprotonation & Restoration of Aromaticity",
         reactants: ["Arenium Sigma Complex", "[FeBr4]⁻ Base"],
-        conditions: "Fast\n- H⁺",
-        products: ["Bromobenzene (C6H5Br)", "HBr", "FeBr3 (Catalyst regenerated)"],
-        note: "[FeBr4]- abstracts sp3 proton, returning the electron pair to restore the 6-pi aromatic system."
+        conditions: "Fast proton abstraction\n- H⁺",
+        products: ["Bromobenzene (C6H5Br)", "+ HBr + FeBr3 (Catalyst regenerated)"],
+        note: "[FeBr4]- abstracts the sp3 proton, returning the electron pair to restore the 6 pi aromatic sextet."
       }
     ]
   },
@@ -106,16 +106,16 @@ export const MECHANISMS_DB: Record<string, MechanismData> = {
         stepNum: 1,
         title: "Step 1: Electrophilic Protonation of Double Bond",
         reactants: ["Ethene (CH2=CH2)", "Hydronium (H3O⁺)"],
-        conditions: "Electrophilic attack (Slow)",
-        products: ["Ethyl Carbocation (CH3-CH2⁺)", "H2O"],
+        conditions: "Electrophilic attack (Slow)\nr.d.s",
+        products: ["Ethyl Carbocation (CH3-CH2⁺)", "+ H2O"],
         note: "Pi-bond electrons attack H+ from hydronium, generating the carbocation intermediate."
       },
       {
         stepNum: 2,
         title: "Step 2: Nucleophilic Attack of Water & Deprotonation",
-        reactants: ["CH3-CH2⁺", "H2O"],
-        conditions: "Fast attack & proton loss",
-        products: ["Ethanol (CH3-CH2-OH)", "H3O⁺ (Regenerated)"],
+        reactants: ["CH3-CH2⁺ Carbocation", "H2O (Nucleophile)"],
+        conditions: "Fast attack &\nproton loss",
+        products: ["Ethanol (CH3-CH2-OH)", "+ H3O⁺ (Catalyst regenerated)"],
         note: "Water lone pair attacks carbocation followed by rapid proton transfer yielding ethanol."
       }
     ]
@@ -128,24 +128,24 @@ export const MECHANISMS_DB: Record<string, MechanismData> = {
         stepNum: 1,
         title: "Step 1: Enolate Formation (Alpha-deprotonation)",
         reactants: ["Acetaldehyde (CH3-CH=O)", "Hydroxide (OH⁻)"],
-        conditions: "Acid-base equilibrium",
-        products: ["Enolate Nucleophile (⁻CH2-CH=O)", "H2O"],
+        conditions: "Acid-base equilibrium\nKa ~ 10⁻²⁰",
+        products: ["Enolate Nucleophile (⁻CH2-CH=O)", "+ H2O"],
         note: "Base abstracts weakly acidic alpha-hydrogen forming resonance-stabilized enolate."
       },
       {
         stepNum: 2,
         title: "Step 2: Nucleophilic Addition to 2nd Carbonyl Molecule",
         reactants: ["Enolate Ion (⁻CH2-CH=O)", "Acetaldehyde (CH3-CH=O)"],
-        conditions: "C–C Bond Formation",
-        products: ["Alkoxide Intermediate (CH3-CH(O⁻)-CH2-CH=O)"],
-        note: "Enolate carbon attacks the electrophilic carbonyl carbon of 2nd aldehyde forming new C-C bond."
+        conditions: "C–C Bond Formation\nNucleophilic Addition",
+        products: ["Alkoxide Intermediate", "(CH3-CH(O⁻)-CH2-CH=O)"],
+        note: "Enolate carbon attacks the electrophilic carbonyl carbon of 2nd aldehyde forming a new C-C bond."
       },
       {
         stepNum: 3,
         title: "Step 3: Protonation to Form Aldol Product",
         reactants: ["Alkoxide Intermediate", "H2O"],
-        conditions: "Protonation",
-        products: ["3-Hydroxybutanal (Aldol)", "OH⁻ (Regenerated)"],
+        conditions: "Protonation\nRegenerates catalyst",
+        products: ["3-Hydroxybutanal (Aldol)", "+ OH⁻ (Regenerated)"],
         note: "Protonation of alkoxide yields beta-hydroxyaldehyde (aldol) and regenerates base catalyst."
       }
     ]
@@ -203,7 +203,7 @@ export const RESONANCE_DB: Record<string, { title: string; explanation: string; 
 
 export class DiagramComposer {
   /**
-   * Generates a publication-quality SVG reaction diagram
+   * Generates a spacious, high-resolution SVG reaction diagram with no overlapping
    */
   public static createReactionSvg(
     reactants: Array<{ name: string; smiles?: string; imgBase64?: string }>,
@@ -211,71 +211,71 @@ export class DiagramComposer {
     conditions?: string,
     title: string = "Chemical Reaction Diagram"
   ): string {
-    const tileW = 200;
-    const tileH = 160;
-    const plusW = 40;
-    const arrowW = Math.max(160, (conditions?.length || 0) * 9 + 40);
+    const tileW = 260;
+    const tileH = 200;
+    const plusW = 50;
+    const arrowW = Math.max(220, (conditions?.length || 0) * 11 + 60);
 
     const reactantWidth = reactants.length * tileW + (reactants.length - 1) * plusW;
     const productWidth = products.length * tileW + (products.length - 1) * plusW;
-    const totalW = reactantWidth + arrowW + productWidth + 80;
-    const totalH = tileH + 110;
+    const totalW = reactantWidth + arrowW + productWidth + 120;
+    const totalH = tileH + 130;
 
     let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalW} ${totalH}" width="${totalW}" height="${totalH}" style="background-color:#ffffff; font-family:system-ui,-apple-system,sans-serif;">
       <!-- Title -->
-      <text x="${totalW / 2}" y="28" font-size="16" font-weight="bold" fill="#1e293b" text-anchor="middle">${escapeXml(title)}</text>
+      <text x="${totalW / 2}" y="36" font-size="20" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(title)}</text>
     `;
 
-    let curX = 40;
-    const midY = 45 + tileH / 2;
+    let curX = 60;
+    const midY = 55 + tileH / 2;
 
     // Reactants
     reactants.forEach((r, i) => {
       if (i > 0) {
         svg += `
           <!-- Plus Sign -->
-          <line x1="${curX + plusW / 2 - 8}" y1="${midY}" x2="${curX + plusW / 2 + 8}" y2="${midY}" stroke="#475569" stroke-width="3" stroke-linecap="round"/>
-          <line x1="${curX + plusW / 2}" y1="${midY - 8}" x2="${curX + plusW / 2}" y2="${midY + 8}" stroke="#475569" stroke-width="3" stroke-linecap="round"/>
+          <line x1="${curX + plusW / 2 - 12}" y1="${midY}" x2="${curX + plusW / 2 + 12}" y2="${midY}" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
+          <line x1="${curX + plusW / 2}" y1="${midY - 12}" x2="${curX + plusW / 2}" y2="${midY + 12}" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
         `;
         curX += plusW;
       }
 
       svg += `
         <!-- Reactant Card -->
-        <rect x="${curX}" y="45" width="${tileW}" height="${tileH}" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+        <rect x="${curX}" y="55" width="${tileW}" height="${tileH}" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
       `;
 
       if (r.imgBase64) {
-        svg += `<image href="data:image/png;base64,${r.imgBase64}" x="${curX + 10}" y="52" width="${tileW - 20}" height="${tileH - 45}" preserveAspectRatio="xMidYMid meet"/>`;
+        svg += `<image href="data:image/png;base64,${r.imgBase64}" x="${curX + 15}" y="65" width="${tileW - 30}" height="${tileH - 65}" preserveAspectRatio="xMidYMid meet"/>`;
       } else {
         svg += `
-          <rect x="${curX + 20}" y="65" width="${tileW - 40}" height="${tileH - 70}" rx="8" fill="#e2e8f0"/>
-          <text x="${curX + tileW / 2}" y="${midY}" font-size="13" font-family="monospace" fill="#334155" text-anchor="middle">${escapeXml(r.smiles || r.name)}</text>
+          <rect x="${curX + 20}" y="75" width="${tileW - 40}" height="${tileH - 95}" rx="10" fill="#e2e8f0"/>
+          <text x="${curX + tileW / 2}" y="${midY}" font-size="15" font-weight="bold" font-family="monospace" fill="#1e293b" text-anchor="middle">${escapeXml(r.smiles || r.name)}</text>
         `;
       }
 
       svg += `
-        <text x="${curX + tileW / 2}" y="${45 + tileH - 12}" font-size="13" font-weight="600" fill="#0f172a" text-anchor="middle">${escapeXml(r.name)}</text>
+        <text x="${curX + tileW / 2}" y="${55 + tileH - 16}" font-size="15" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(r.name)}</text>
       `;
       curX += tileW;
     });
 
     // Arrow
-    const arrowStartX = curX + 15;
-    const arrowEndX = curX + arrowW - 15;
+    const arrowStartX = curX + 25;
+    const arrowEndX = curX + arrowW - 25;
     const arrowMidX = curX + arrowW / 2;
 
     svg += `
       <!-- Reaction Arrow -->
-      <line x1="${arrowStartX}" y1="${midY}" x2="${arrowEndX}" y2="${midY}" stroke="#0f172a" stroke-width="3" stroke-linecap="round"/>
-      <polygon points="${arrowEndX},${midY} ${arrowEndX - 12},${midY - 6} ${arrowEndX - 6},${midY} ${arrowEndX - 12},${midY + 6}" fill="#0f172a"/>
+      <line x1="${arrowStartX}" y1="${midY}" x2="${arrowEndX}" y2="${midY}" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+      <polygon points="${arrowEndX},${midY} ${arrowEndX - 16},${midY - 8} ${arrowEndX - 8},${midY} ${arrowEndX - 16},${midY + 8}" fill="#0f172a"/>
     `;
 
     if (conditions) {
       const condLines = conditions.split(/[\n/|]/);
-      svg += `<text x="${arrowMidX}" y="${midY - 12}" font-size="13" font-weight="bold" fill="#0284c7" text-anchor="middle">${escapeXml(condLines[0]?.trim() || "")}</text>`;
+      svg += `<text x="${arrowMidX}" y="${midY - 16}" font-size="15" font-weight="bold" fill="#0284c7" text-anchor="middle">${escapeXml(condLines[0]?.trim() || "")}</text>`;
       if (condLines[1]) {
-        svg += `<text x="${arrowMidX}" y="${midY + 22}" font-size="12" fill="#64748b" text-anchor="middle">${escapeXml(condLines[1]?.trim() || "")}</text>`;
+        svg += `<text x="${arrowMidX}" y="${midY + 28}" font-size="14" font-weight="600" fill="#64748b" text-anchor="middle">${escapeXml(condLines[1]?.trim() || "")}</text>`;
       }
     }
     curX += arrowW;
@@ -285,28 +285,28 @@ export class DiagramComposer {
       if (i > 0) {
         svg += `
           <!-- Plus Sign -->
-          <line x1="${curX + plusW / 2 - 8}" y1="${midY}" x2="${curX + plusW / 2 + 8}" y2="${midY}" stroke="#475569" stroke-width="3" stroke-linecap="round"/>
-          <line x1="${curX + plusW / 2}" y1="${midY - 8}" x2="${curX + plusW / 2}" y2="${midY + 8}" stroke="#475569" stroke-width="3" stroke-linecap="round"/>
+          <line x1="${curX + plusW / 2 - 12}" y1="${midY}" x2="${curX + plusW / 2 + 12}" y2="${midY}" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
+          <line x1="${curX + plusW / 2}" y1="${midY - 12}" x2="${curX + plusW / 2}" y2="${midY + 12}" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
         `;
         curX += plusW;
       }
 
       svg += `
         <!-- Product Card -->
-        <rect x="${curX}" y="45" width="${tileW}" height="${tileH}" rx="12" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+        <rect x="${curX}" y="55" width="${tileW}" height="${tileH}" rx="14" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
       `;
 
       if (p.imgBase64) {
-        svg += `<image href="data:image/png;base64,${p.imgBase64}" x="${curX + 10}" y="52" width="${tileW - 20}" height="${tileH - 45}" preserveAspectRatio="xMidYMid meet"/>`;
+        svg += `<image href="data:image/png;base64,${p.imgBase64}" x="${curX + 15}" y="65" width="${tileW - 30}" height="${tileH - 65}" preserveAspectRatio="xMidYMid meet"/>`;
       } else {
         svg += `
-          <rect x="${curX + 20}" y="65" width="${tileW - 40}" height="${tileH - 70}" rx="8" fill="#dcfce7"/>
-          <text x="${curX + tileW / 2}" y="${midY}" font-size="13" font-family="monospace" fill="#166534" text-anchor="middle">${escapeXml(p.smiles || p.name)}</text>
+          <rect x="${curX + 20}" y="75" width="${tileW - 40}" height="${tileH - 95}" rx="10" fill="#dcfce7"/>
+          <text x="${curX + tileW / 2}" y="${midY}" font-size="15" font-weight="bold" font-family="monospace" fill="#166534" text-anchor="middle">${escapeXml(p.smiles || p.name)}</text>
         `;
       }
 
       svg += `
-        <text x="${curX + tileW / 2}" y="${45 + tileH - 12}" font-size="13" font-weight="600" fill="#14532d" text-anchor="middle">${escapeXml(p.name)}</text>
+        <text x="${curX + tileW / 2}" y="${55 + tileH - 16}" font-size="15" font-weight="bold" fill="#14532d" text-anchor="middle">${escapeXml(p.name)}</text>
       `;
       curX += tileW;
     });
@@ -316,58 +316,69 @@ export class DiagramComposer {
   }
 
   /**
-   * Generates a multi-step mechanism diagram SVG
+   * Generates a spacious, textbook-quality multi-step mechanism diagram with zero text overlaps
    */
   public static createMechanismSvg(mechData: MechanismData): string {
-    const width = 820;
-    const stepH = 140;
-    const totalH = 80 + mechData.steps.length * (stepH + 20);
+    const width = 1160;
+    const stepH = 190;
+    const totalH = 100 + mechData.steps.length * (stepH + 24);
 
     let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${totalH}" width="${width}" height="${totalH}" style="background-color:#ffffff; font-family:system-ui,-apple-system,sans-serif;">
       <!-- Title & Description Header -->
-      <text x="${width / 2}" y="28" font-size="17" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(mechData.title)}</text>
-      <text x="${width / 2}" y="48" font-size="12" fill="#64748b" text-anchor="middle">${escapeXml(mechData.description)}</text>
+      <text x="${width / 2}" y="36" font-size="22" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(mechData.title)}</text>
+      <text x="${width / 2}" y="62" font-size="14" fill="#64748b" text-anchor="middle">${escapeXml(mechData.description)}</text>
     `;
 
-    let curY = 65;
+    let curY = 85;
     mechData.steps.forEach((step) => {
+      const cardW = width - 80;
+      const rectX = 40;
+      const boxReactantW = 380;
+      const arrowW = 200;
+      const boxProductW = 440;
+
       svg += `
-        <!-- Step Panel -->
-        <g transform="translate(30, ${curY})">
-          <rect x="0" y="0" width="${width - 60}" height="${stepH}" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+        <!-- Step Panel Container -->
+        <g transform="translate(${rectX}, ${curY})">
+          <rect x="0" y="0" width="${cardW}" height="${stepH}" rx="16" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
           
-          <!-- Step Header Badge -->
-          <rect x="0" y="0" width="${width - 60}" height="32" rx="12" fill="#e0f2fe"/>
-          <rect x="0" y="20" width="${width - 60}" height="12" fill="#e0f2fe"/>
-          <text x="16" y="21" font-size="13" font-weight="bold" fill="#0369a1">${escapeXml(step.title)}</text>
+          <!-- Step Header Ribbon -->
+          <rect x="0" y="0" width="${cardW}" height="38" rx="16" fill="#e0f2fe"/>
+          <rect x="0" y="24" width="${cardW}" height="14" fill="#e0f2fe"/>
+          <text x="20" y="25" font-size="15" font-weight="bold" fill="#0369a1">${escapeXml(step.title)}</text>
           
-          <!-- Reactants Box -->
-          <g transform="translate(20, 44)">
-            <rect x="0" y="0" width="220" height="52" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
-            <text x="110" y="31" font-size="12" font-weight="600" fill="#1e293b" text-anchor="middle">${escapeXml(step.reactants.join(" + "))}</text>
+          <!-- Reactants Card -->
+          <g transform="translate(24, 52)">
+            <rect x="0" y="0" width="${boxReactantW}" height="68" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+            <text x="${boxReactantW / 2}" y="${step.reactants.length > 1 ? 30 : 40}" font-size="14" font-weight="bold" fill="#1e293b" text-anchor="middle">${escapeXml(step.reactants[0] || "")}</text>
+            ${step.reactants[1] ? `<text x="${boxReactantW / 2}" y="52" font-size="13" font-family="monospace" fill="#475569" text-anchor="middle">${escapeXml(step.reactants.slice(1).join(" + "))}</text>` : ""}
           </g>
           
-          <!-- Arrow with conditions -->
-          <g transform="translate(260, 70)">
-            <line x1="0" y1="0" x2="160" y2="0" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"/>
-            <polygon points="160,0 148,-5 152,0 148,5" fill="#0f172a"/>
-            <text x="80" y="-8" font-size="11" font-weight="bold" fill="#0284c7" text-anchor="middle">${escapeXml(step.conditions.split("\n")[0] || "")}</text>
-            ${step.conditions.split("\n")[1] ? `<text x="80" y="16" font-size="10" fill="#64748b" text-anchor="middle">${escapeXml(step.conditions.split("\n")[1])}</text>` : ""}
+          <!-- Arrow & Reaction Conditions -->
+          <g transform="translate(${24 + boxReactantW + 15}, 86)">
+            <line x1="0" y1="0" x2="${arrowW - 30}" y2="0" stroke="#0f172a" stroke-width="3" stroke-linecap="round"/>
+            <polygon points="${arrowW - 30},0 ${arrowW - 46},-7 ${arrowW - 38},0 ${arrowW - 46},7" fill="#0f172a"/>
+            <text x="${(arrowW - 30) / 2}" y="-12" font-size="13" font-weight="bold" fill="#0284c7" text-anchor="middle">${escapeXml(step.conditions.split("\n")[0] || "")}</text>
+            ${step.conditions.split("\n")[1] ? `<text x="${(arrowW - 30) / 2}" y="20" font-size="12" font-weight="600" fill="#64748b" text-anchor="middle">${escapeXml(step.conditions.split("\n")[1])}</text>` : ""}
           </g>
           
-          <!-- Products Box -->
-          <g transform="translate(440, 44)">
-            <rect x="0" y="0" width="280" height="52" rx="8" fill="#f0fdf4" stroke="#bbf7d0"/>
-            <text x="140" y="31" font-size="12" font-weight="600" fill="#166534" text-anchor="middle">${escapeXml(step.products.join(" + "))}</text>
+          <!-- Products Card -->
+          <g transform="translate(${24 + boxReactantW + arrowW + 10}, 52)">
+            <rect x="0" y="0" width="${boxProductW}" height="68" rx="12" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+            <text x="${boxProductW / 2}" y="${step.products.length > 1 ? 30 : 40}" font-size="14" font-weight="bold" fill="#166534" text-anchor="middle">${escapeXml(step.products[0] || "")}</text>
+            ${step.products[1] ? `<text x="${boxProductW / 2}" y="52" font-size="13" font-family="monospace" fill="#15803d" text-anchor="middle">${escapeXml(step.products.slice(1).join(" "))}</text>` : ""}
           </g>
           
-          <!-- Note / Electron movement -->
-          <text x="16" y="122" font-size="11" fill="#475569">
-            <tspan font-weight="bold" fill="#0284c7">Curved Arrow &amp; Intermediate: </tspan>${escapeXml(step.note)}
-          </text>
+          <!-- Curved Arrow & Intermediate Note Box -->
+          <g transform="translate(24, 134)">
+            <rect x="0" y="0" width="${cardW - 48}" height="42" rx="8" fill="#f1f5f9"/>
+            <text x="14" y="26" font-size="13" fill="#334155">
+              <tspan font-weight="bold" fill="#0284c7">⚡ Electron Movement &amp; Intermediate: </tspan>${escapeXml(step.note)}
+            </text>
+          </g>
         </g>
       `;
-      curY += stepH + 16;
+      curY += stepH + 20;
     });
 
     svg += `</svg>`;
@@ -375,47 +386,47 @@ export class DiagramComposer {
   }
 
   /**
-   * Generates a resonance contributor SVG diagram
+   * Generates a spacious resonance contributor SVG diagram
    */
   public static createResonanceSvg(resData: { title: string; explanation: string; forms: Array<{ name: string; formula: string; charge: string }> }): string {
-    const tileW = 160;
-    const tileH = 130;
-    const arrowW = 60;
+    const tileW = 210;
+    const tileH = 170;
+    const arrowW = 80;
     const count = resData.forms.length;
-    const totalW = 60 + count * tileW + (count - 1) * arrowW + 60;
-    const totalH = 220;
+    const totalW = 80 + count * tileW + (count - 1) * arrowW + 80;
+    const totalH = 300;
 
     let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalW} ${totalH}" width="${totalW}" height="${totalH}" style="background-color:#ffffff; font-family:system-ui,-apple-system,sans-serif;">
       <!-- Title -->
-      <text x="${totalW / 2}" y="28" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(resData.title)}</text>
-      <text x="${totalW / 2}" y="48" font-size="12" fill="#64748b" text-anchor="middle">${escapeXml(resData.explanation)}</text>
+      <text x="${totalW / 2}" y="36" font-size="20" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(resData.title)}</text>
+      <text x="${totalW / 2}" y="62" font-size="14" fill="#64748b" text-anchor="middle">${escapeXml(resData.explanation)}</text>
       
       <!-- Brackets [ ... ] -->
-      <path d="M 40,65 L 25,65 L 25,${totalH - 25} L 40,${totalH - 25}" fill="none" stroke="#94a3b8" stroke-width="3"/>
-      <path d="M ${totalW - 40},65 L ${totalW - 25},65 L ${totalW - 25},${totalH - 25} L ${totalW - 40},${totalH - 25}" fill="none" stroke="#94a3b8" stroke-width="3"/>
+      <path d="M 50,85 L 30,85 L 30,${totalH - 35} L 50,${totalH - 35}" fill="none" stroke="#64748b" stroke-width="4" stroke-linecap="round"/>
+      <path d="M ${totalW - 50},85 L ${totalW - 30},85 L ${totalW - 30},${totalH - 35} L ${totalW - 50},${totalH - 35}" fill="none" stroke="#64748b" stroke-width="4" stroke-linecap="round"/>
     `;
 
-    let curX = 45;
-    const midY = 65 + tileH / 2;
+    let curX = 65;
+    const midY = 85 + tileH / 2;
 
     resData.forms.forEach((f, i) => {
       if (i > 0) {
         // Double headed arrow <-->
         svg += `
-          <line x1="${curX + 8}" y1="${midY}" x2="${curX + arrowW - 8}" y2="${midY}" stroke="#334155" stroke-width="2"/>
-          <polygon points="${curX + 8},${midY} ${curX + 16},${midY - 4} ${curX + 16},${midY + 4}" fill="#334155"/>
-          <polygon points="${curX + arrowW - 8},${midY} ${curX + arrowW - 16},${midY - 4} ${curX + arrowW - 16},${midY + 4}" fill="#334155"/>
+          <line x1="${curX + 12}" y1="${midY}" x2="${curX + arrowW - 12}" y2="${midY}" stroke="#0f172a" stroke-width="3"/>
+          <polygon points="${curX + 12},${midY} ${curX + 24},${midY - 6} ${curX + 24},${midY + 6}" fill="#0f172a"/>
+          <polygon points="${curX + arrowW - 12},${midY} ${curX + arrowW - 24},${midY - 6} ${curX + arrowW - 24},${midY + 6}" fill="#0f172a"/>
         `;
         curX += arrowW;
       }
 
       svg += `
         <!-- Form Tile -->
-        <rect x="${curX}" y="65" width="${tileW}" height="${tileH}" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
-        <text x="${curX + tileW / 2}" y="92" font-size="13" font-weight="bold" fill="#0369a1" text-anchor="middle">${escapeXml(f.name)}</text>
-        <rect x="${curX + 15}" y="105" width="${tileW - 30}" height="45" rx="6" fill="#e2e8f0"/>
-        <text x="${curX + tileW / 2}" y="132" font-size="12" font-family="monospace" fill="#1e293b" text-anchor="middle">${escapeXml(f.formula)}</text>
-        <text x="${curX + tileW / 2}" y="178" font-size="10" font-weight="600" fill="#dc2626" text-anchor="middle">${escapeXml(f.charge)}</text>
+        <rect x="${curX}" y="85" width="${tileW}" height="${tileH}" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+        <text x="${curX + tileW / 2}" y="118" font-size="16" font-weight="bold" fill="#0369a1" text-anchor="middle">${escapeXml(f.name)}</text>
+        <rect x="${curX + 18}" y="135" width="${tileW - 36}" height="60" rx="8" fill="#e2e8f0"/>
+        <text x="${curX + tileW / 2}" y="172" font-size="14" font-weight="bold" font-family="monospace" fill="#1e293b" text-anchor="middle">${escapeXml(f.formula)}</text>
+        <text x="${curX + tileW / 2}" y="232" font-size="12" font-weight="bold" fill="#dc2626" text-anchor="middle">${escapeXml(f.charge)}</text>
       `;
       curX += tileW;
     });
@@ -425,36 +436,36 @@ export class DiagramComposer {
   }
 
   /**
-   * Generates a side-by-side molecular comparison SVG grid
+   * Generates a spacious side-by-side molecular comparison SVG grid
    */
   public static createComparisonSvg(compounds: Array<{ name: string; formula?: string; mw?: number; smiles?: string; imgBase64?: string }>, title: string = "Structure Comparison"): string {
-    const tileW = 220;
-    const tileH = 220;
-    const gap = 24;
+    const tileW = 280;
+    const tileH = 280;
+    const gap = 30;
     const cols = compounds.length;
-    const totalW = 40 + cols * tileW + (cols - 1) * gap + 40;
-    const totalH = tileH + 80;
+    const totalW = 60 + cols * tileW + (cols - 1) * gap + 60;
+    const totalH = tileH + 110;
 
     let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalW} ${totalH}" width="${totalW}" height="${totalH}" style="background-color:#ffffff; font-family:system-ui,-apple-system,sans-serif;">
       <!-- Title -->
-      <text x="${totalW / 2}" y="28" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(title)}</text>
+      <text x="${totalW / 2}" y="38" font-size="20" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(title)}</text>
     `;
 
-    let curX = 40;
+    let curX = 60;
     compounds.forEach((c) => {
       svg += `
         <!-- Molecule Card -->
-        <rect x="${curX}" y="45" width="${tileW}" height="${tileH}" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
-        <text x="${curX + tileW / 2}" y="70" font-size="14" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(c.name)}</text>
-        <text x="${curX + tileW / 2}" y="88" font-size="11" font-weight="600" fill="#0284c7" text-anchor="middle">${c.formula ? `Formula: ${c.formula}` : ""}${c.mw ? ` | MW: ${c.mw}` : ""}</text>
+        <rect x="${curX}" y="60" width="${tileW}" height="${tileH}" rx="16" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+        <text x="${curX + tileW / 2}" y="92" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(c.name)}</text>
+        <text x="${curX + tileW / 2}" y="114" font-size="13" font-weight="600" fill="#0284c7" text-anchor="middle">${c.formula ? `Formula: ${c.formula}` : ""}${c.mw ? ` | MW: ${c.mw}` : ""}</text>
       `;
 
       if (c.imgBase64) {
-        svg += `<image href="data:image/png;base64,${c.imgBase64}" x="${curX + 15}" y="98" width="${tileW - 30}" height="110" preserveAspectRatio="xMidYMid meet"/>`;
+        svg += `<image href="data:image/png;base64,${c.imgBase64}" x="${curX + 20}" y="125" width="${tileW - 40}" height="140" preserveAspectRatio="xMidYMid meet"/>`;
       } else {
         svg += `
-          <rect x="${curX + 15}" y="98" width="${tileW - 30}" height="110" rx="8" fill="#e2e8f0"/>
-          <text x="${curX + tileW / 2}" y="158" font-size="12" font-family="monospace" fill="#334155" text-anchor="middle">${escapeXml(c.smiles || c.name)}</text>
+          <rect x="${curX + 20}" y="125" width="${tileW - 40}" height="140" rx="10" fill="#e2e8f0"/>
+          <text x="${curX + tileW / 2}" y="200" font-size="14" font-weight="bold" font-family="monospace" fill="#334155" text-anchor="middle">${escapeXml(c.smiles || c.name)}</text>
         `;
       }
 

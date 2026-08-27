@@ -20,7 +20,12 @@ import {
   Eye,
   ChevronRight,
   Compass,
-  Columns
+  Columns,
+  Bot,
+  Globe,
+  Sliders,
+  FileCode,
+  Share2
 } from 'lucide-react';
 
 interface SystemHealth {
@@ -78,11 +83,17 @@ interface PresetCompound {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'structure' | 'reaction' | 'mechanism' | 'resonance' | 'stereo' | 'compare' | 'library' | 'inspector'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'structure' | 'reaction' | 'mechanism' | 'resonance' | 'stereo' | 'compare' | 'library' | 'inspector' | 'connect'>('dashboard');
   const [health, setHealth] = useState<SystemHealth | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [logs, setLogs] = useState<ToolLog[]>([]);
   const [loadingHealth, setLoadingHealth] = useState(false);
+
+  // --- Copy Feedback States ---
+  const [copiedUrl, setCopiedUrl] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
+  const [copiedClaudeConfig, setCopiedClaudeConfig] = useState(false);
+  const [copiedCursorConfig, setCopiedCursorConfig] = useState(false);
 
   // --- Structure Tester State ---
   const [structQuery, setStructQuery] = useState('benzaldehyde');
@@ -401,11 +412,64 @@ export default function App() {
     }
   };
 
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = (text: string, type: 'url' | 'prompt' | 'claude' | 'cursor' | 'smiles') => {
     navigator.clipboard.writeText(text);
-    setCopiedSmiles(true);
-    setTimeout(() => setCopiedSmiles(false), 2000);
+    if (type === 'url') {
+      setCopiedUrl(true);
+      setTimeout(() => setCopiedUrl(false), 2000);
+    } else if (type === 'prompt') {
+      setCopiedPrompt(true);
+      setTimeout(() => setCopiedPrompt(false), 2000);
+    } else if (type === 'claude') {
+      setCopiedClaudeConfig(true);
+      setTimeout(() => setCopiedClaudeConfig(false), 2000);
+    } else if (type === 'cursor') {
+      setCopiedCursorConfig(true);
+      setTimeout(() => setCopiedCursorConfig(false), 2000);
+    } else if (type === 'smiles') {
+      setCopiedSmiles(true);
+      setTimeout(() => setCopiedSmiles(false), 2000);
+    }
   };
+
+  const liveMcpUrl = 'https://chem-ten-dun.vercel.app/mcp';
+
+  const masterAiPrompt = `You are an expert Organic Chemistry AI Assistant integrated with the Organic Chemistry Structure MCP Server (Streamable HTTP: ${liveMcpUrl}).
+
+Your core superpower is displaying accurate, publication-quality 2D chemical structures, reactions, mechanisms, resonance contributors, and stereochemical projections directly in the conversation.
+
+### MANDATORY TOOL CALLING RULES:
+1. Whenever the user mentions or asks to explain a chemical compound (e.g. benzaldehyde, phenol, aspirin, acetone):
+   -> MUST call 'show_structure' with { "compound": "<name_or_smiles>" }.
+2. Whenever explaining a chemical reaction, transformation, or synthesis (e.g. bromination of benzene, hydration of ethene):
+   -> MUST call 'show_reaction' with { "reactants": ["..."], "products": ["..."], "conditions": "..." }.
+3. Whenever explaining a reaction mechanism, electron movement, or intermediate (e.g. SN1, SN2, EAS, Aldol, Hydration):
+   -> MUST call 'show_mechanism' with { "reaction": "<mechanism_name>" }.
+4. Whenever comparing multiple molecules, functional groups, acidities, or oxidation levels:
+   -> MUST call 'compare_structures' with { "compounds": ["compound1", "compound2", ...], "title": "..." }.
+5. Whenever explaining resonance stability, delocalization, or mesomeric effects:
+   -> MUST call 'show_resonance' with { "compound": "<compound_name>" }.
+6. Whenever discussing chiral stereocenters, optical isomerism, or (R)/(S)/(E)/(Z) configuration:
+   -> MUST call 'show_stereochemistry' with { "compound": "<name>", "configuration": "R" | "S" }.
+7. If uncertain about ambiguous queries (like 'cresol' or 'butanol'), inspect the returned candidates and ask the user to clarify.
+
+Always pair the visual diagrams returned by the tools with clear, step-by-step chemical explanations.`;
+
+  const claudeDesktopConfig = JSON.stringify({
+    mcpServers: {
+      "organic-chemistry": {
+        "url": liveMcpUrl
+      }
+    }
+  }, null, 2);
+
+  const cursorMcpConfig = JSON.stringify({
+    mcpServers: {
+      "organic-chemistry": {
+        "url": liveMcpUrl
+      }
+    }
+  }, null, 2);
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-950 text-slate-100">
@@ -431,7 +495,7 @@ export default function App() {
           <div className="flex items-center space-x-2 sm:space-x-3">
             {/* MCP HTTP Pill */}
             <div className="flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-slate-800/60 border border-slate-700/50 text-xs">
-              <div className={`w-2 h-2 rounded-full ${health?.mcp_server?.status === 'running' ? 'bg-emerald-400 animate-pulse' : 'bg-emerald-400'}`} />
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-slate-400">MCP:</span>
               <span className="text-slate-200 font-mono font-medium">/mcp</span>
             </div>
@@ -466,7 +530,8 @@ export default function App() {
             { id: 'stereo', label: 'Stereochemistry', icon: Compass },
             { id: 'compare', label: 'Compare Structures', icon: Columns },
             { id: 'library', label: 'Compound Library', icon: BookOpen },
-            { id: 'inspector', label: 'MCP Inspector', icon: Terminal }
+            { id: 'inspector', label: 'MCP Inspector', icon: Terminal },
+            { id: 'connect', label: 'Connect AI & Prompts', icon: Bot }
           ].map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -476,7 +541,7 @@ export default function App() {
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                   isActive
-                    ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                    ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
                 }`}
               >
@@ -496,14 +561,23 @@ export default function App() {
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
             {/* Notice Banner */}
-            <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/20 flex items-start space-x-3">
-              <Sparkles className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-              <div className="text-sm">
-                <span className="font-semibold text-emerald-300">MCP Server is Live & Ready for AI Connections: </span>
-                <span className="text-slate-300">
-                  Compatible with ChatGPT, Gemini, Claude, Cursor, and MCP Inspector via Streamable HTTP (<code>/mcp</code>) and stdio (<code>npm run stdio</code>).
-                </span>
+            <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-950/50 via-slate-900 to-slate-900 border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg shadow-emerald-950/20">
+              <div className="flex items-start space-x-3">
+                <Sparkles className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-semibold text-emerald-300 text-sm">MCP Server is Live & Ready for AI Chats</div>
+                  <div className="text-slate-300 text-xs mt-0.5">
+                    Connect ChatGPT, Claude, Gemini, Cursor, or Cline to render publication-quality chemical diagrams.
+                  </div>
+                </div>
               </div>
+              <button
+                onClick={() => setActiveTab('connect')}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center space-x-1.5 shadow-md shadow-emerald-900/30 transition-all flex-shrink-0"
+              >
+                <Bot className="w-4 h-4" />
+                <span>Get AI Setup &amp; Prompts</span>
+              </button>
             </div>
 
             {/* Metrics Grid */}
@@ -587,7 +661,7 @@ export default function App() {
                     ├─ Ambiguity Check → Local JEE DB (200+ Presets) → SQLite Cache → PubChem API
                   </div>
                   <div className="text-slate-400 pl-4">
-                    └─ Structure Pipeline → RDKit Engine / Diagram Composer → 2D Textbook Depiction
+                    └─ Structure Pipeline → RDKit Engine / Diagram Composer → 2D Depiction
                   </div>
                   <div className="flex items-center justify-between text-indigo-400 font-semibold border-t border-slate-800/60 pt-2">
                     <span>MCP Response Result Payload</span>
@@ -601,15 +675,15 @@ export default function App() {
                 {/* MCP Endpoint Quick Copy */}
                 <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/40 border border-slate-700/60 text-xs">
                   <div className="flex items-center space-x-2">
-                    <span className="text-slate-400">Streamable HTTP MCP Endpoint:</span>
-                    <code className="text-emerald-300 font-mono">/mcp</code>
+                    <span className="text-slate-400">Live MCP Server URL:</span>
+                    <code className="text-emerald-300 font-mono font-bold">{liveMcpUrl}</code>
                   </div>
                   <button
-                    onClick={() => copyToClipboard(window.location.origin + '/mcp')}
+                    onClick={() => copyToClipboard(liveMcpUrl, 'url')}
                     className="px-2.5 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-200 flex items-center space-x-1 transition-colors"
                   >
-                    {copiedSmiles ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copiedSmiles ? 'Copied URL' : 'Copy Full URL'}</span>
+                    {copiedUrl ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedUrl ? 'Copied' : 'Copy Endpoint'}</span>
                   </button>
                 </div>
               </div>
@@ -618,17 +692,17 @@ export default function App() {
               <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
                 <h3 className="font-semibold text-slate-200 flex items-center space-x-2">
                   <Terminal className="w-4 h-4 text-emerald-400" />
-                  <span>Available MCP Tools</span>
+                  <span>Available MCP Tools (7)</span>
                 </h3>
                 <div className="space-y-2 text-xs">
                   {[
-                    { name: 'show_structure', desc: 'Renders 2D molecule with formula & properties', tag: 'Image' },
-                    { name: 'resolve_compound', desc: 'Returns detailed molecular JSON metadata', tag: 'JSON' },
-                    { name: 'show_reaction', desc: 'Renders reaction diagram with arrows & conditions', tag: 'Image' },
-                    { name: 'show_mechanism', desc: 'Curved arrow multi-step mechanism diagram', tag: 'Image' },
+                    { name: 'show_structure', desc: '2D molecule with formula & properties', tag: 'Image' },
+                    { name: 'resolve_compound', desc: 'Molecular JSON metadata & IUPAC', tag: 'JSON' },
+                    { name: 'show_reaction', desc: 'Equation with arrows, conditions & +', tag: 'Image' },
+                    { name: 'show_mechanism', desc: 'Step-by-step intermediate panels & arrows', tag: 'Image' },
                     { name: 'compare_structures', desc: 'Side-by-side molecular comparison grid', tag: 'Image' },
-                    { name: 'show_resonance', desc: 'Resonance contributors with <--> arrows', tag: 'Image' },
-                    { name: 'show_stereochemistry', desc: 'Wedge/dash chiral projection & CIP labels', tag: 'Image' }
+                    { name: 'show_resonance', desc: 'Canonical contributors in [ ] with <-->', tag: 'Image' },
+                    { name: 'show_stereochemistry', desc: 'Wedge/dash 3D projection & CIP labels', tag: 'Image' }
                   ].map(t => (
                     <div key={t.name} className="p-2 rounded-lg bg-slate-950/60 border border-slate-800/80 flex items-center justify-between">
                       <div>
@@ -656,7 +730,7 @@ export default function App() {
 
               {logs.length === 0 ? (
                 <div className="text-center py-8 text-slate-500 text-sm">
-                  No tool calls logged yet. Run a structure or reaction test above to generate logs!
+                  No tool calls logged yet. Run a structure, reaction, or mechanism test above to generate logs!
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -809,7 +883,7 @@ export default function App() {
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                 {/* Left: High-Res Diagram */}
                 <div className="md:col-span-7 p-6 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col items-center justify-center min-h-[380px]">
-                  <div className="p-4 rounded-xl bg-white shadow-2xl ring-1 ring-slate-700/50 max-w-full overflow-hidden">
+                  <div className="p-6 rounded-2xl bg-white shadow-2xl ring-1 ring-slate-700/50 max-w-full overflow-hidden">
                     <img
                       src={`data:${structResult.mime_type || 'image/png'};base64,${structResult.image_base64 || structResult.base64}`}
                       alt={structResult.compound?.name || 'Chemical Structure'}
@@ -854,7 +928,7 @@ export default function App() {
                         <div className="flex justify-between items-center">
                           <span className="text-slate-400">Canonical SMILES:</span>
                           <button
-                            onClick={() => copyToClipboard(structResult.compound?.canonicalSmiles)}
+                            onClick={() => copyToClipboard(structResult.compound?.canonicalSmiles, 'smiles')}
                             className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center space-x-1"
                           >
                             <Copy className="w-3 h-3" />
@@ -905,7 +979,7 @@ export default function App() {
                   <ArrowRight className="w-5 h-5 text-emerald-400" />
                   <span>Chemical Reaction Diagram Tester</span>
                 </h2>
-                <p className="text-xs text-slate-400">Assemble publication-quality reaction equations with reactants, plus signs (+), reaction arrows, conditions, and products.</p>
+                <p className="text-xs text-slate-400">Assemble spacious reaction equations with reactants, plus signs (+), forward arrows, conditions, and products.</p>
               </div>
 
               {/* Reaction Input Builder */}
@@ -989,7 +1063,7 @@ export default function App() {
             {/* Reaction Diagram Result */}
             {reactionResult?.base64 && (
               <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-                <div className="p-6 rounded-xl bg-white shadow-2xl flex items-center justify-center overflow-x-auto">
+                <div className="p-6 rounded-2xl bg-white shadow-2xl flex items-center justify-center overflow-x-auto">
                   <img
                     src={`data:${reactionResult.mime_type || 'image/png'};base64,${reactionResult.base64}`}
                     alt="Reaction Diagram"
@@ -1015,13 +1089,13 @@ export default function App() {
                   <Layers className="w-5 h-5 text-emerald-400" />
                   <span>Reaction Mechanism Explorer (JEE / Organic Chemistry)</span>
                 </h2>
-                <p className="text-xs text-slate-400">Step-by-step intermediate panels with curved electron-movement arrows, step numbering, and formal charges.</p>
+                <p className="text-xs text-slate-400">Step-by-step intermediate panels with curved electron-movement arrows, step numbering, and zero text overlap.</p>
               </div>
 
               {/* Mechanism Selector Buttons */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { name: 'SN1 Hydrolysis', query: 'sn1 hydrolysis of tert-butyl bromide', desc: 'Carbocation intermediate & front/back attack' },
+                  { name: 'SN1 Hydrolysis', query: 'sn1 hydrolysis of tert-butyl bromide', desc: 'Carbocation intermediate & racemization' },
                   { name: 'SN2 Substitution', query: 'sn2 substitution', desc: 'Concerted backside attack & Walden inversion' },
                   { name: 'EAS Bromination', query: 'eas bromination of benzene', desc: 'Arenium ion (Wheland / Sigma complex)' },
                   { name: 'Alkene Hydration', query: 'hydration of ethene', desc: 'Electrophilic addition of H3O+' }
@@ -1056,7 +1130,7 @@ export default function App() {
             {/* Mechanism Output Result */}
             {mechResult?.base64 && (
               <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-                <div className="p-6 rounded-xl bg-white shadow-2xl flex items-center justify-center overflow-x-auto">
+                <div className="p-6 rounded-2xl bg-white shadow-2xl flex items-center justify-center overflow-x-auto">
                   <img
                     src={`data:${mechResult.mime_type || 'image/png'};base64,${mechResult.base64}`}
                     alt="Reaction Mechanism"
@@ -1083,7 +1157,7 @@ export default function App() {
                   <Zap className="w-5 h-5 text-emerald-400" />
                   <span>Resonance Contributors & Hybrid Renderer</span>
                 </h2>
-                <p className="text-xs text-slate-400">Canonical structures enclosed in brackets with &lt;--&gt; resonance arrows and delocalization analysis.</p>
+                <p className="text-xs text-slate-400">Canonical structures enclosed in brackets [ ] with &lt;--&gt; resonance arrows and delocalization analysis.</p>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -1115,7 +1189,7 @@ export default function App() {
             {/* Resonance Output Result */}
             {resResult?.base64 && (
               <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-                <div className="p-6 rounded-xl bg-white shadow-2xl flex items-center justify-center overflow-x-auto">
+                <div className="p-6 rounded-2xl bg-white shadow-2xl flex items-center justify-center overflow-x-auto">
                   <img
                     src={`data:${resResult.mime_type || 'image/png'};base64,${resResult.base64}`}
                     alt="Resonance Diagram"
@@ -1187,7 +1261,7 @@ export default function App() {
             {/* Stereochemistry Result */}
             {stereoResult?.base64 && (
               <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-                <div className="p-6 rounded-xl bg-white shadow-2xl flex items-center justify-center overflow-x-auto">
+                <div className="p-6 rounded-2xl bg-white shadow-2xl flex items-center justify-center overflow-x-auto">
                   <img
                     src={`data:${stereoResult.mime_type || 'image/png'};base64,${stereoResult.base64}`}
                     alt="Stereochemistry Diagram"
@@ -1287,7 +1361,7 @@ export default function App() {
             {/* Compare Result Diagram */}
             {compareResult?.base64 && (
               <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-                <div className="p-6 rounded-xl bg-white shadow-2xl flex items-center justify-center overflow-x-auto">
+                <div className="p-6 rounded-2xl bg-white shadow-2xl flex items-center justify-center overflow-x-auto">
                   <img
                     src={`data:${compareResult.mime_type || 'image/png'};base64,${compareResult.base64}`}
                     alt="Comparison Grid"
@@ -1480,7 +1554,7 @@ export default function App() {
 
                 {/* Rendered Preview if base64 image present */}
                 {(inspectorResponse.rawResult?.image_base64 || inspectorResponse.rawResult?.base64) && (
-                  <div className="p-4 rounded-xl bg-white shadow-xl flex items-center justify-center overflow-hidden max-h-96">
+                  <div className="p-4 rounded-2xl bg-white shadow-xl flex items-center justify-center overflow-hidden max-h-96">
                     <img
                       src={`data:${inspectorResponse.rawResult?.mime_type || 'image/png'};base64,${inspectorResponse.rawResult?.image_base64 || inspectorResponse.rawResult?.base64}`}
                       alt="MCP Render Result"
@@ -1500,11 +1574,165 @@ export default function App() {
             )}
           </div>
         )}
+
+        {/* ========================================================================= */}
+        {/* TAB 10: CONNECT AI & SYSTEM PROMPTS */}
+        {/* ========================================================================= */}
+        {activeTab === 'connect' && (
+          <div className="space-y-6">
+            {/* Header Card */}
+            <div className="p-6 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-900 border border-emerald-500/30 space-y-3">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-600/30 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                  <Bot className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-100">Connect Your AI Assistant</h2>
+                  <p className="text-xs text-slate-400">Step-by-step instructions &amp; copy-paste system prompts for ChatGPT, Claude, Gemini, Cursor, and Cline.</p>
+                </div>
+              </div>
+
+              {/* Endpoint banner */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 rounded-xl bg-slate-950/80 border border-emerald-500/30">
+                <div className="flex items-center space-x-2">
+                  <Globe className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <span className="text-xs text-slate-400 font-medium">Your Live Streamable HTTP MCP Endpoint:</span>
+                  <code className="text-sm text-emerald-300 font-mono font-bold">{liveMcpUrl}</code>
+                </div>
+                <button
+                  onClick={() => copyToClipboard(liveMcpUrl, 'url')}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center justify-center space-x-1.5 shadow-md transition-all flex-shrink-0"
+                >
+                  {copiedUrl ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  <span>{copiedUrl ? 'Copied Endpoint URL' : 'Copy Endpoint URL'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* AI Master System Prompt Card */}
+            <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <h3 className="font-bold text-slate-100 flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>Master AI Instructions / System Prompt</span>
+                  </h3>
+                  <p className="text-xs text-slate-400">Paste this prompt into your Custom GPT, Claude Project, Cursor Rules, or AI instructions.</p>
+                </div>
+                <button
+                  onClick={() => copyToClipboard(masterAiPrompt, 'prompt')}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center space-x-1.5 transition-colors self-start sm:self-auto"
+                >
+                  {copiedPrompt ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                  <span>{copiedPrompt ? 'Copied Master Prompt' : 'Copy Master Prompt'}</span>
+                </button>
+              </div>
+
+              <pre className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 font-mono text-xs overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-80">
+                {masterAiPrompt}
+              </pre>
+            </div>
+
+            {/* Client Configuration Setup Guides */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Claude Desktop Card */}
+              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 rounded-lg bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400 font-bold text-sm">
+                      C
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-100 text-sm">Claude Desktop</h4>
+                      <p className="text-[11px] text-slate-400">claude_desktop_config.json</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => copyToClipboard(claudeDesktopConfig, 'claude')}
+                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium flex items-center space-x-1"
+                  >
+                    {copiedClaudeConfig ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedClaudeConfig ? 'Copied' : 'Copy JSON'}</span>
+                  </button>
+                </div>
+
+                <pre className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-emerald-300">
+                  {claudeDesktopConfig}
+                </pre>
+
+                <div className="space-y-1.5 text-xs text-slate-400">
+                  <div className="font-semibold text-slate-300">How to add in Claude:</div>
+                  <div>1. Open Claude Desktop Settings &rarr; Developer &rarr; Edit Config.</div>
+                  <div>2. Paste the JSON block above under <code className="text-slate-300">mcpServers</code>.</div>
+                  <div>3. Restart Claude Desktop. The hammer icon will show 7 active tools!</div>
+                </div>
+              </div>
+
+              {/* Cursor & Cline Card */}
+              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold text-sm">
+                      &gt;_
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-100 text-sm">Cursor IDE &amp; Cline</h4>
+                      <p className="text-[11px] text-slate-400">.cursor/mcp.json or Settings</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => copyToClipboard(cursorMcpConfig, 'cursor')}
+                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium flex items-center space-x-1"
+                  >
+                    {copiedCursorConfig ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedCursorConfig ? 'Copied' : 'Copy JSON'}</span>
+                  </button>
+                </div>
+
+                <pre className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-emerald-300">
+                  {cursorMcpConfig}
+                </pre>
+
+                <div className="space-y-1.5 text-xs text-slate-400">
+                  <div className="font-semibold text-slate-300">How to add in Cursor:</div>
+                  <div>1. Open Cursor Settings &rarr; Features &rarr; MCP &rarr; Add New MCP Server.</div>
+                  <div>2. Name: <code className="text-slate-300">chemistry</code> | Type: <code className="text-slate-300">sse / http</code> | URL: <code className="text-slate-300">{liveMcpUrl}</code></div>
+                  <div>3. Start prompting your AI to visualize organic compounds and mechanisms!</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Test Queries Inspiration */}
+            <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
+              <h4 className="font-bold text-slate-100 text-sm flex items-center space-x-2">
+                <Sparkles className="w-4 h-4 text-emerald-400" />
+                <span>Example Questions to Ask Your AI Once Connected</span>
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                {[
+                  { q: 'Explain benzaldehyde and why the carbonyl carbon is electrophilic', tool: 'show_structure' },
+                  { q: 'Show the step-by-step SN1 mechanism of tert-butyl bromide hydrolysis', tool: 'show_mechanism' },
+                  { q: 'Show the reaction of benzene with Br2 in the presence of FeBr3', tool: 'show_reaction' },
+                  { q: 'Compare the oxidation states of ethanol, ethanal, and ethanoic acid', tool: 'compare_structures' },
+                  { q: 'Draw the resonance contributors for the phenoxide ion', tool: 'show_resonance' },
+                  { q: 'Show the (R) and (S) stereoisomers of 2-butanol with wedge and dash', tool: 'show_stereochemistry' }
+                ].map((item, idx) => (
+                  <div key={idx} className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-1.5">
+                    <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                      {item.tool}
+                    </span>
+                    <p className="text-slate-200 font-medium">{item.q}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Footer */}
       <footer className="border-t border-slate-800/60 py-4 text-center text-xs text-slate-500">
-        Organic Chemistry Structure MCP Server &copy; 2026 &bull; Powered by RDKit &amp; Official Model Context Protocol SDK
+        Organic Chemistry Structure MCP Server &copy; 2026 &bull; Powered by RDKit &amp; Official Model Context Protocol SDK &bull; <a href={liveMcpUrl} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline">{liveMcpUrl}</a>
       </footer>
     </div>
   );

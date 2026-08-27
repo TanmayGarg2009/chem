@@ -65,30 +65,51 @@ npm start
 
 ---
 
+## Live Deployment & AI Connection
+
+- **Live Web Dashboard**: [https://chem-ten-dun.vercel.app/](https://chem-ten-dun.vercel.app/)
+- **Live Streamable HTTP MCP Endpoint**: `https://chem-ten-dun.vercel.app/mcp`
+
+---
+
 ## Connecting to AI Clients
 
-### 1. Claude Desktop (stdio)
-Add the following to your `claude_desktop_config.json`:
+### 1. Claude Desktop
+Add to your `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
     "organic-chemistry": {
-      "command": "npx",
-      "args": ["-y", "tsx", "C:/Users/TANMAY GARG/Desktop/chem/src/mcp/transports/stdioTransport.ts"]
+      "url": "https://chem-ten-dun.vercel.app/mcp"
     }
   }
 }
 ```
 
-### 2. MCP Inspector
-To inspect and test all 7 tools interactively:
-```bash
-npx @modelcontextprotocol/inspector npx tsx src/mcp/transports/stdioTransport.ts
+### 2. Cursor IDE & Cline
+In `.cursor/mcp.json` or Settings $\rightarrow$ MCP:
+```json
+{
+  "mcpServers": {
+    "organic-chemistry": {
+      "url": "https://chem-ten-dun.vercel.app/mcp"
+    }
+  }
+}
 ```
-Or connect via Streamable HTTP to `http://localhost:3000/mcp`.
 
-### 3. ChatGPT & Remote AI Clients
-Deploy the server to an HTTPS-enabled domain (e.g. `https://your-mcp-domain.com/mcp`) and configure it as a Custom Action or MCP Connector.
+### 3. Master AI System Prompt (ChatGPT / Claude / Gemini)
+Paste the following prompt into your Custom GPT instructions, Claude Project, or System Prompt:
+```markdown
+You are an expert Organic Chemistry AI Assistant integrated with the Organic Chemistry Structure MCP Server (https://chem-ten-dun.vercel.app/mcp).
+Whenever explaining chemical compounds, reactions, mechanisms, resonance, comparisons, or stereochemistry, PROACTIVELY CALL the MCP tools:
+- show_structure: { "compound": "..." }
+- show_reaction: { "reactants": ["..."], "products": ["..."], "conditions": "..." }
+- show_mechanism: { "reaction": "..." }
+- compare_structures: { "compounds": ["...", "..."] }
+- show_resonance: { "compound": "..." }
+- show_stereochemistry: { "compound": "...", "configuration": "R" | "S" }
+```
 
 ---
 
