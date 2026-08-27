@@ -1,0 +1,50 @@
+{
+  "name": "chemistry-structure-mcp",
+  "version": "1.0.0",
+  "description": "Production Organic Chemistry Structure MCP Server for AI Chats (ChatGPT, Gemini, Claude, Cursor)",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "stdio": "tsx src/mcp/transports/stdioTransport.ts",
+    "engine": ".venv\\Scripts\\python engine/main.py",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:python": ".venv\\Scripts\\python -m pytest engine/tests"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "chemistry",
+    "rdkit",
+    "organic-chemistry",
+    "pubchem",
+    "smiles",
+    "jee-chemistry"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.1",
+    "better-sqlite3": "^11.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "uuid": "^11.1.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.10",
+    "@types/uuid": "^10.0.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.8"
+  }
+}
