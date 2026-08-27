@@ -25,7 +25,12 @@ import {
   Globe,
   Sliders,
   FileCode,
-  Share2
+  Share2,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Download,
+  Minimize2
 } from 'lucide-react';
 
 interface SystemHealth {
@@ -80,6 +85,102 @@ interface PresetCompound {
   category: string;
   iupacName?: string;
   pubchemCid?: string;
+}
+
+interface DiagramViewerProps {
+  base64: string;
+  mimeType?: string;
+  alt: string;
+  filename?: string;
+}
+
+function DiagramViewer({ base64, mimeType = 'image/png', alt, filename = 'chemical_structure' }: DiagramViewerProps) {
+  const [zoom, setZoom] = useState(100);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const imgSrc = `data:${mimeType};base64,${base64}`;
+
+  const handleDownload = () => {
+    const link = document.createElement('a');
+    link.href = imgSrc;
+    link.download = `${filename}.${mimeType.includes('svg') ? 'svg' : 'png'}`;
+    link.click();
+  };
+
+  return (
+    <div className="relative rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
+      {/* Viewer Action Toolbar */}
+      <div className="flex items-center justify-between px-4 py-2 bg-slate-100/90 border-b border-slate-200 text-xs text-slate-600">
+        <div className="flex items-center space-x-2">
+          <span className="font-semibold text-slate-800">{alt}</span>
+          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-mono text-[10px] font-bold">
+            {mimeType.includes('svg') ? 'VECTOR SVG' : 'HIGH-RES PNG'}
+          </span>
+        </div>
+
+        {/* Zoom & Download Controls */}
+        <div className="flex items-center space-x-1 sm:space-x-2">
+          <button
+            onClick={() => setZoom(Math.max(50, zoom - 25))}
+            className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-700 transition-colors"
+            title="Zoom Out"
+          >
+            <ZoomOut className="w-4 h-4" />
+          </button>
+          <span className="font-mono text-xs font-semibold px-1 min-w-[45px] text-center text-slate-800">
+            {zoom}%
+          </span>
+          <button
+            onClick={() => setZoom(Math.min(250, zoom + 25))}
+            className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-700 transition-colors"
+            title="Zoom In"
+          >
+            <ZoomIn className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setZoom(100)}
+            className="px-2 py-1 rounded-lg hover:bg-slate-200 text-slate-700 font-mono text-[11px] transition-colors"
+          >
+            Reset
+          </button>
+          <div className="w-px h-4 bg-slate-300 mx-1" />
+          <button
+            onClick={handleDownload}
+            className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-700 transition-colors flex items-center space-x-1"
+            title="Download Image"
+          >
+            <Download className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-700 transition-colors"
+            title={isFullscreen ? 'Exit Fullscreen' : 'View Fullscreen'}
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Main Image Canvas Area */}
+      <div className={`overflow-auto p-6 flex items-center justify-center bg-white ${isFullscreen ? 'fixed inset-0 z-50 p-12 bg-white/95 backdrop-blur-md' : 'min-h-[380px] max-h-[650px]'}`}>
+        {isFullscreen && (
+          <button
+            onClick={() => setIsFullscreen(false)}
+            className="absolute top-6 right-6 p-2 rounded-xl bg-slate-900 text-white shadow-xl hover:bg-slate-800"
+          >
+            <Minimize2 className="w-6 h-6" />
+          </button>
+        )}
+        <div style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'center center', transition: 'transform 0.15s ease-out' }}>
+          <img
+            src={imgSrc}
+            alt={alt}
+            className="max-w-none h-auto object-contain mx-auto shadow-sm rounded-lg"
+          />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function App() {
@@ -881,16 +982,15 @@ Always pair the visual diagrams returned by the tools with clear, step-by-step c
             {/* Successful Render Card */}
             {(structResult?.image_base64 || structResult?.base64) && (
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                {/* Left: High-Res Diagram */}
-                <div className="md:col-span-7 p-6 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col items-center justify-center min-h-[380px]">
-                  <div className="p-6 rounded-2xl bg-white shadow-2xl ring-1 ring-slate-700/50 max-w-full overflow-hidden">
-                    <img
-                      src={`data:${structResult.mime_type || 'image/png'};base64,${structResult.image_base64 || structResult.base64}`}
-                      alt={structResult.compound?.name || 'Chemical Structure'}
-                      className="max-w-full h-auto object-contain mx-auto"
-                    />
-                  </div>
-                  <div className="flex items-center space-x-2 text-xs text-slate-400 mt-4">
+                {/* Left: High-Res Diagram Viewer */}
+                <div className="md:col-span-7 space-y-2">
+                  <DiagramViewer
+                    base64={structResult.image_base64 || structResult.base64}
+                    mimeType={structResult.mime_type || 'image/png'}
+                    alt={structResult.compound?.name || 'Chemical Structure'}
+                    filename={structResult.compound?.name?.toLowerCase().replace(/\s+/g, '_') || 'structure'}
+                  />
+                  <div className="flex items-center justify-center space-x-2 text-xs text-slate-400 pt-1">
                     <span className="w-2 h-2 rounded-full bg-emerald-400" />
                     <span>Rendered deterministically via 2D Chemical Structure Engine</span>
                   </div>
@@ -979,7 +1079,7 @@ Always pair the visual diagrams returned by the tools with clear, step-by-step c
                   <ArrowRight className="w-5 h-5 text-emerald-400" />
                   <span>Chemical Reaction Diagram Tester</span>
                 </h2>
-                <p className="text-xs text-slate-400">Assemble spacious reaction equations with reactants, plus signs (+), forward arrows, conditions, and products.</p>
+                <p className="text-xs text-slate-400">Assemble spacious reaction equations with large readable molecules, plus signs (+), forward arrows, conditions, and products.</p>
               </div>
 
               {/* Reaction Input Builder */}
@@ -1062,16 +1162,15 @@ Always pair the visual diagrams returned by the tools with clear, step-by-step c
 
             {/* Reaction Diagram Result */}
             {reactionResult?.base64 && (
-              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-                <div className="p-6 rounded-2xl bg-white shadow-2xl flex items-center justify-center overflow-x-auto">
-                  <img
-                    src={`data:${reactionResult.mime_type || 'image/png'};base64,${reactionResult.base64}`}
-                    alt="Reaction Diagram"
-                    className="max-w-full h-auto object-contain"
-                  />
-                </div>
-                <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 font-mono text-xs text-slate-300">
-                  {reactionResult.reaction_summary}
+              <div className="space-y-4">
+                <DiagramViewer
+                  base64={reactionResult.base64}
+                  mimeType={reactionResult.mime_type || 'image/png'}
+                  alt="Chemical Reaction Diagram"
+                  filename="reaction_diagram"
+                />
+                <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 font-mono text-xs text-slate-300 flex items-center justify-between">
+                  <span>{reactionResult.reaction_summary}</span>
                 </div>
               </div>
             )}
@@ -1089,7 +1188,7 @@ Always pair the visual diagrams returned by the tools with clear, step-by-step c
                   <Layers className="w-5 h-5 text-emerald-400" />
                   <span>Reaction Mechanism Explorer (JEE / Organic Chemistry)</span>
                 </h2>
-                <p className="text-xs text-slate-400">Step-by-step intermediate panels with curved electron-movement arrows, step numbering, and zero text overlap.</p>
+                <p className="text-xs text-slate-400">Step-by-step intermediate panels with curved electron-movement arrows, large text, and zero overlap.</p>
               </div>
 
               {/* Mechanism Selector Buttons */}
@@ -1129,16 +1228,15 @@ Always pair the visual diagrams returned by the tools with clear, step-by-step c
 
             {/* Mechanism Output Result */}
             {mechResult?.base64 && (
-              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-                <div className="p-6 rounded-2xl bg-white shadow-2xl flex items-center justify-center overflow-x-auto">
-                  <img
-                    src={`data:${mechResult.mime_type || 'image/png'};base64,${mechResult.base64}`}
-                    alt="Reaction Mechanism"
-                    className="max-w-full h-auto object-contain"
-                  />
-                </div>
-                <div className="text-xs text-slate-300 p-3 rounded-lg bg-slate-950 border border-slate-800">
-                  <div className="font-bold text-emerald-400">{mechResult.title}</div>
+              <div className="space-y-4">
+                <DiagramViewer
+                  base64={mechResult.base64}
+                  mimeType={mechResult.mime_type || 'image/png'}
+                  alt={mechResult.title || 'Reaction Mechanism'}
+                  filename="reaction_mechanism"
+                />
+                <div className="text-xs text-slate-300 p-4 rounded-xl bg-slate-900 border border-slate-800">
+                  <div className="font-bold text-emerald-400 text-sm">{mechResult.title}</div>
                   <div className="text-slate-400 mt-1">{mechResult.description}</div>
                 </div>
               </div>
@@ -1157,7 +1255,7 @@ Always pair the visual diagrams returned by the tools with clear, step-by-step c
                   <Zap className="w-5 h-5 text-emerald-400" />
                   <span>Resonance Contributors & Hybrid Renderer</span>
                 </h2>
-                <p className="text-xs text-slate-400">Canonical structures enclosed in brackets [ ] with &lt;--&gt; resonance arrows and delocalization analysis.</p>
+                <p className="text-xs text-slate-400">Large canonical structures enclosed in brackets [ ] with &lt;--&gt; resonance arrows and delocalization analysis.</p>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -1188,16 +1286,15 @@ Always pair the visual diagrams returned by the tools with clear, step-by-step c
 
             {/* Resonance Output Result */}
             {resResult?.base64 && (
-              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-                <div className="p-6 rounded-2xl bg-white shadow-2xl flex items-center justify-center overflow-x-auto">
-                  <img
-                    src={`data:${resResult.mime_type || 'image/png'};base64,${resResult.base64}`}
-                    alt="Resonance Diagram"
-                    className="max-w-full h-auto object-contain"
-                  />
-                </div>
-                <div className="text-xs text-slate-300 p-3 rounded-lg bg-slate-950 border border-slate-800">
-                  <div className="font-bold text-emerald-400">{resResult.title}</div>
+              <div className="space-y-4">
+                <DiagramViewer
+                  base64={resResult.base64}
+                  mimeType={resResult.mime_type || 'image/png'}
+                  alt={resResult.title || 'Resonance Contributors'}
+                  filename="resonance_diagram"
+                />
+                <div className="text-xs text-slate-300 p-4 rounded-xl bg-slate-900 border border-slate-800">
+                  <div className="font-bold text-emerald-400 text-sm">{resResult.title}</div>
                   <div className="text-slate-400 mt-1">{resResult.explanation}</div>
                 </div>
               </div>
@@ -1260,14 +1357,13 @@ Always pair the visual diagrams returned by the tools with clear, step-by-step c
 
             {/* Stereochemistry Result */}
             {stereoResult?.base64 && (
-              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-                <div className="p-6 rounded-2xl bg-white shadow-2xl flex items-center justify-center overflow-x-auto">
-                  <img
-                    src={`data:${stereoResult.mime_type || 'image/png'};base64,${stereoResult.base64}`}
-                    alt="Stereochemistry Diagram"
-                    className="max-w-full h-auto object-contain"
-                  />
-                </div>
+              <div className="space-y-4">
+                <DiagramViewer
+                  base64={stereoResult.base64}
+                  mimeType={stereoResult.mime_type || 'image/png'}
+                  alt="Stereochemistry Diagram"
+                  filename="stereochemistry_diagram"
+                />
                 <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 font-mono text-xs text-slate-300">
                   <span className="text-emerald-400">Isomeric SMILES:</span> {stereoResult.isomeric_smiles}
                 </div>
@@ -1360,14 +1456,13 @@ Always pair the visual diagrams returned by the tools with clear, step-by-step c
 
             {/* Compare Result Diagram */}
             {compareResult?.base64 && (
-              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-                <div className="p-6 rounded-2xl bg-white shadow-2xl flex items-center justify-center overflow-x-auto">
-                  <img
-                    src={`data:${compareResult.mime_type || 'image/png'};base64,${compareResult.base64}`}
-                    alt="Comparison Grid"
-                    className="max-w-full h-auto object-contain"
-                  />
-                </div>
+              <div className="space-y-4">
+                <DiagramViewer
+                  base64={compareResult.base64}
+                  mimeType={compareResult.mime_type || 'image/png'}
+                  alt="Side-by-Side Molecular Comparison"
+                  filename="molecular_comparison"
+                />
               </div>
             )}
           </div>
@@ -1541,10 +1636,10 @@ Always pair the visual diagrams returned by the tools with clear, step-by-step c
 
             {/* Inspector Output Area */}
             {inspectorResponse && (
-              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <span className="font-bold text-slate-100">MCP Protocol Response</span>
+                    <span className="font-bold text-slate-100 text-sm">MCP Protocol Response</span>
                     <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
                       {inspectorResponse.latencyMs}ms
                     </span>
@@ -1554,13 +1649,12 @@ Always pair the visual diagrams returned by the tools with clear, step-by-step c
 
                 {/* Rendered Preview if base64 image present */}
                 {(inspectorResponse.rawResult?.image_base64 || inspectorResponse.rawResult?.base64) && (
-                  <div className="p-4 rounded-2xl bg-white shadow-xl flex items-center justify-center overflow-hidden max-h-96">
-                    <img
-                      src={`data:${inspectorResponse.rawResult?.mime_type || 'image/png'};base64,${inspectorResponse.rawResult?.image_base64 || inspectorResponse.rawResult?.base64}`}
-                      alt="MCP Render Result"
-                      className="max-h-88 object-contain"
-                    />
-                  </div>
+                  <DiagramViewer
+                    base64={inspectorResponse.rawResult?.image_base64 || inspectorResponse.rawResult?.base64}
+                    mimeType={inspectorResponse.rawResult?.mime_type || 'image/png'}
+                    alt="MCP Simulation Result"
+                    filename="mcp_result"
+                  />
                 )}
 
                 {/* Raw JSON viewer */}

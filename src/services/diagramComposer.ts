@@ -203,7 +203,7 @@ export const RESONANCE_DB: Record<string, { title: string; explanation: string; 
 
 export class DiagramComposer {
   /**
-   * Generates a spacious, high-resolution SVG reaction diagram with no overlapping
+   * Generates a giant, ultra-high-resolution, easily readable SVG reaction diagram
    */
   public static createReactionSvg(
     reactants: Array<{ name: string; smiles?: string; imgBase64?: string }>,
@@ -211,71 +211,71 @@ export class DiagramComposer {
     conditions?: string,
     title: string = "Chemical Reaction Diagram"
   ): string {
-    const tileW = 260;
-    const tileH = 200;
-    const plusW = 50;
-    const arrowW = Math.max(220, (conditions?.length || 0) * 11 + 60);
+    const tileW = 380;
+    const tileH = 300;
+    const plusW = 70;
+    const arrowW = Math.max(280, (conditions?.length || 0) * 14 + 80);
 
     const reactantWidth = reactants.length * tileW + (reactants.length - 1) * plusW;
     const productWidth = products.length * tileW + (products.length - 1) * plusW;
-    const totalW = reactantWidth + arrowW + productWidth + 120;
-    const totalH = tileH + 130;
+    const totalW = reactantWidth + arrowW + productWidth + 140;
+    const totalH = tileH + 160;
 
     let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalW} ${totalH}" width="${totalW}" height="${totalH}" style="background-color:#ffffff; font-family:system-ui,-apple-system,sans-serif;">
       <!-- Title -->
-      <text x="${totalW / 2}" y="36" font-size="20" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(title)}</text>
+      <text x="${totalW / 2}" y="44" font-size="26" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(title)}</text>
     `;
 
-    let curX = 60;
-    const midY = 55 + tileH / 2;
+    let curX = 70;
+    const midY = 70 + tileH / 2;
 
     // Reactants
     reactants.forEach((r, i) => {
       if (i > 0) {
         svg += `
           <!-- Plus Sign -->
-          <line x1="${curX + plusW / 2 - 12}" y1="${midY}" x2="${curX + plusW / 2 + 12}" y2="${midY}" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
-          <line x1="${curX + plusW / 2}" y1="${midY - 12}" x2="${curX + plusW / 2}" y2="${midY + 12}" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
+          <line x1="${curX + plusW / 2 - 18}" y1="${midY}" x2="${curX + plusW / 2 + 18}" y2="${midY}" stroke="#334155" stroke-width="6" stroke-linecap="round"/>
+          <line x1="${curX + plusW / 2}" y1="${midY - 18}" x2="${curX + plusW / 2}" y2="${midY + 18}" stroke="#334155" stroke-width="6" stroke-linecap="round"/>
         `;
         curX += plusW;
       }
 
       svg += `
         <!-- Reactant Card -->
-        <rect x="${curX}" y="55" width="${tileW}" height="${tileH}" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+        <rect x="${curX}" y="70" width="${tileW}" height="${tileH}" rx="18" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2.5"/>
       `;
 
       if (r.imgBase64) {
-        svg += `<image href="data:image/png;base64,${r.imgBase64}" x="${curX + 15}" y="65" width="${tileW - 30}" height="${tileH - 65}" preserveAspectRatio="xMidYMid meet"/>`;
+        svg += `<image href="data:image/png;base64,${r.imgBase64}" x="${curX + 20}" y="82" width="${tileW - 40}" height="${tileH - 85}" preserveAspectRatio="xMidYMid meet"/>`;
       } else {
         svg += `
-          <rect x="${curX + 20}" y="75" width="${tileW - 40}" height="${tileH - 95}" rx="10" fill="#e2e8f0"/>
-          <text x="${curX + tileW / 2}" y="${midY}" font-size="15" font-weight="bold" font-family="monospace" fill="#1e293b" text-anchor="middle">${escapeXml(r.smiles || r.name)}</text>
+          <rect x="${curX + 25}" y="95" width="${tileW - 50}" height="${tileH - 130}" rx="12" fill="#e2e8f0"/>
+          <text x="${curX + tileW / 2}" y="${midY}" font-size="20" font-weight="bold" font-family="monospace" fill="#1e293b" text-anchor="middle">${escapeXml(r.smiles || r.name)}</text>
         `;
       }
 
       svg += `
-        <text x="${curX + tileW / 2}" y="${55 + tileH - 16}" font-size="15" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(r.name)}</text>
+        <text x="${curX + tileW / 2}" y="${70 + tileH - 20}" font-size="20" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(r.name)}</text>
       `;
       curX += tileW;
     });
 
     // Arrow
-    const arrowStartX = curX + 25;
-    const arrowEndX = curX + arrowW - 25;
+    const arrowStartX = curX + 30;
+    const arrowEndX = curX + arrowW - 30;
     const arrowMidX = curX + arrowW / 2;
 
     svg += `
       <!-- Reaction Arrow -->
-      <line x1="${arrowStartX}" y1="${midY}" x2="${arrowEndX}" y2="${midY}" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
-      <polygon points="${arrowEndX},${midY} ${arrowEndX - 16},${midY - 8} ${arrowEndX - 8},${midY} ${arrowEndX - 16},${midY + 8}" fill="#0f172a"/>
+      <line x1="${arrowStartX}" y1="${midY}" x2="${arrowEndX}" y2="${midY}" stroke="#0f172a" stroke-width="5" stroke-linecap="round"/>
+      <polygon points="${arrowEndX},${midY} ${arrowEndX - 20},${midY - 10} ${arrowEndX - 10},${midY} ${arrowEndX - 20},${midY + 10}" fill="#0f172a"/>
     `;
 
     if (conditions) {
       const condLines = conditions.split(/[\n/|]/);
-      svg += `<text x="${arrowMidX}" y="${midY - 16}" font-size="15" font-weight="bold" fill="#0284c7" text-anchor="middle">${escapeXml(condLines[0]?.trim() || "")}</text>`;
+      svg += `<text x="${arrowMidX}" y="${midY - 20}" font-size="18" font-weight="bold" fill="#0284c7" text-anchor="middle">${escapeXml(condLines[0]?.trim() || "")}</text>`;
       if (condLines[1]) {
-        svg += `<text x="${arrowMidX}" y="${midY + 28}" font-size="14" font-weight="600" fill="#64748b" text-anchor="middle">${escapeXml(condLines[1]?.trim() || "")}</text>`;
+        svg += `<text x="${arrowMidX}" y="${midY + 36}" font-size="16" font-weight="bold" fill="#64748b" text-anchor="middle">${escapeXml(condLines[1]?.trim() || "")}</text>`;
       }
     }
     curX += arrowW;
@@ -285,28 +285,28 @@ export class DiagramComposer {
       if (i > 0) {
         svg += `
           <!-- Plus Sign -->
-          <line x1="${curX + plusW / 2 - 12}" y1="${midY}" x2="${curX + plusW / 2 + 12}" y2="${midY}" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
-          <line x1="${curX + plusW / 2}" y1="${midY - 12}" x2="${curX + plusW / 2}" y2="${midY + 12}" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
+          <line x1="${curX + plusW / 2 - 18}" y1="${midY}" x2="${curX + plusW / 2 + 18}" y2="${midY}" stroke="#334155" stroke-width="6" stroke-linecap="round"/>
+          <line x1="${curX + plusW / 2}" y1="${midY - 18}" x2="${curX + plusW / 2}" y2="${midY + 18}" stroke="#334155" stroke-width="6" stroke-linecap="round"/>
         `;
         curX += plusW;
       }
 
       svg += `
         <!-- Product Card -->
-        <rect x="${curX}" y="55" width="${tileW}" height="${tileH}" rx="14" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
+        <rect x="${curX}" y="70" width="${tileW}" height="${tileH}" rx="18" fill="#f0fdf4" stroke="#86efac" stroke-width="2.5"/>
       `;
 
       if (p.imgBase64) {
-        svg += `<image href="data:image/png;base64,${p.imgBase64}" x="${curX + 15}" y="65" width="${tileW - 30}" height="${tileH - 65}" preserveAspectRatio="xMidYMid meet"/>`;
+        svg += `<image href="data:image/png;base64,${p.imgBase64}" x="${curX + 20}" y="82" width="${tileW - 40}" height="${tileH - 85}" preserveAspectRatio="xMidYMid meet"/>`;
       } else {
         svg += `
-          <rect x="${curX + 20}" y="75" width="${tileW - 40}" height="${tileH - 95}" rx="10" fill="#dcfce7"/>
-          <text x="${curX + tileW / 2}" y="${midY}" font-size="15" font-weight="bold" font-family="monospace" fill="#166534" text-anchor="middle">${escapeXml(p.smiles || p.name)}</text>
+          <rect x="${curX + 25}" y="95" width="${tileW - 50}" height="${tileH - 130}" rx="12" fill="#dcfce7"/>
+          <text x="${curX + tileW / 2}" y="${midY}" font-size="20" font-weight="bold" font-family="monospace" fill="#166534" text-anchor="middle">${escapeXml(p.smiles || p.name)}</text>
         `;
       }
 
       svg += `
-        <text x="${curX + tileW / 2}" y="${55 + tileH - 16}" font-size="15" font-weight="bold" fill="#14532d" text-anchor="middle">${escapeXml(p.name)}</text>
+        <text x="${curX + tileW / 2}" y="${70 + tileH - 20}" font-size="20" font-weight="bold" fill="#14532d" text-anchor="middle">${escapeXml(p.name)}</text>
       `;
       curX += tileW;
     });
@@ -316,69 +316,69 @@ export class DiagramComposer {
   }
 
   /**
-   * Generates a spacious, textbook-quality multi-step mechanism diagram with zero text overlaps
+   * Generates a giant, textbook-quality multi-step mechanism diagram with zero text overlaps
    */
   public static createMechanismSvg(mechData: MechanismData): string {
-    const width = 1160;
-    const stepH = 190;
-    const totalH = 100 + mechData.steps.length * (stepH + 24);
+    const width = 1280;
+    const stepH = 230;
+    const totalH = 120 + mechData.steps.length * (stepH + 28);
 
     let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${totalH}" width="${width}" height="${totalH}" style="background-color:#ffffff; font-family:system-ui,-apple-system,sans-serif;">
       <!-- Title & Description Header -->
-      <text x="${width / 2}" y="36" font-size="22" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(mechData.title)}</text>
-      <text x="${width / 2}" y="62" font-size="14" fill="#64748b" text-anchor="middle">${escapeXml(mechData.description)}</text>
+      <text x="${width / 2}" y="42" font-size="26" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(mechData.title)}</text>
+      <text x="${width / 2}" y="74" font-size="16" fill="#64748b" text-anchor="middle">${escapeXml(mechData.description)}</text>
     `;
 
-    let curY = 85;
+    let curY = 105;
     mechData.steps.forEach((step) => {
-      const cardW = width - 80;
-      const rectX = 40;
-      const boxReactantW = 380;
-      const arrowW = 200;
-      const boxProductW = 440;
+      const cardW = width - 100;
+      const rectX = 50;
+      const boxReactantW = 430;
+      const arrowW = 230;
+      const boxProductW = 480;
 
       svg += `
         <!-- Step Panel Container -->
         <g transform="translate(${rectX}, ${curY})">
-          <rect x="0" y="0" width="${cardW}" height="${stepH}" rx="16" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+          <rect x="0" y="0" width="${cardW}" height="${stepH}" rx="18" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2.5"/>
           
           <!-- Step Header Ribbon -->
-          <rect x="0" y="0" width="${cardW}" height="38" rx="16" fill="#e0f2fe"/>
-          <rect x="0" y="24" width="${cardW}" height="14" fill="#e0f2fe"/>
-          <text x="20" y="25" font-size="15" font-weight="bold" fill="#0369a1">${escapeXml(step.title)}</text>
+          <rect x="0" y="0" width="${cardW}" height="44" rx="18" fill="#e0f2fe"/>
+          <rect x="0" y="26" width="${cardW}" height="18" fill="#e0f2fe"/>
+          <text x="24" y="29" font-size="17" font-weight="bold" fill="#0369a1">${escapeXml(step.title)}</text>
           
           <!-- Reactants Card -->
-          <g transform="translate(24, 52)">
-            <rect x="0" y="0" width="${boxReactantW}" height="68" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
-            <text x="${boxReactantW / 2}" y="${step.reactants.length > 1 ? 30 : 40}" font-size="14" font-weight="bold" fill="#1e293b" text-anchor="middle">${escapeXml(step.reactants[0] || "")}</text>
-            ${step.reactants[1] ? `<text x="${boxReactantW / 2}" y="52" font-size="13" font-family="monospace" fill="#475569" text-anchor="middle">${escapeXml(step.reactants.slice(1).join(" + "))}</text>` : ""}
+          <g transform="translate(28, 62)">
+            <rect x="0" y="0" width="${boxReactantW}" height="84" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+            <text x="${boxReactantW / 2}" y="${step.reactants.length > 1 ? 36 : 48}" font-size="17" font-weight="bold" fill="#1e293b" text-anchor="middle">${escapeXml(step.reactants[0] || "")}</text>
+            ${step.reactants[1] ? `<text x="${boxReactantW / 2}" y="64" font-size="15" font-weight="bold" font-family="monospace" fill="#475569" text-anchor="middle">${escapeXml(step.reactants.slice(1).join(" + "))}</text>` : ""}
           </g>
           
           <!-- Arrow & Reaction Conditions -->
-          <g transform="translate(${24 + boxReactantW + 15}, 86)">
-            <line x1="0" y1="0" x2="${arrowW - 30}" y2="0" stroke="#0f172a" stroke-width="3" stroke-linecap="round"/>
-            <polygon points="${arrowW - 30},0 ${arrowW - 46},-7 ${arrowW - 38},0 ${arrowW - 46},7" fill="#0f172a"/>
-            <text x="${(arrowW - 30) / 2}" y="-12" font-size="13" font-weight="bold" fill="#0284c7" text-anchor="middle">${escapeXml(step.conditions.split("\n")[0] || "")}</text>
-            ${step.conditions.split("\n")[1] ? `<text x="${(arrowW - 30) / 2}" y="20" font-size="12" font-weight="600" fill="#64748b" text-anchor="middle">${escapeXml(step.conditions.split("\n")[1])}</text>` : ""}
+          <g transform="translate(${28 + boxReactantW + 20}, 104)">
+            <line x1="0" y1="0" x2="${arrowW - 40}" y2="0" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+            <polygon points="${arrowW - 40},0 ${arrowW - 58},-9 ${arrowW - 48},0 ${arrowW - 58},9" fill="#0f172a"/>
+            <text x="${(arrowW - 40) / 2}" y="-16" font-size="15" font-weight="bold" fill="#0284c7" text-anchor="middle">${escapeXml(step.conditions.split("\n")[0] || "")}</text>
+            ${step.conditions.split("\n")[1] ? `<text x="${(arrowW - 40) / 2}" y="26" font-size="14" font-weight="bold" fill="#64748b" text-anchor="middle">${escapeXml(step.conditions.split("\n")[1])}</text>` : ""}
           </g>
           
           <!-- Products Card -->
-          <g transform="translate(${24 + boxReactantW + arrowW + 10}, 52)">
-            <rect x="0" y="0" width="${boxProductW}" height="68" rx="12" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
-            <text x="${boxProductW / 2}" y="${step.products.length > 1 ? 30 : 40}" font-size="14" font-weight="bold" fill="#166534" text-anchor="middle">${escapeXml(step.products[0] || "")}</text>
-            ${step.products[1] ? `<text x="${boxProductW / 2}" y="52" font-size="13" font-family="monospace" fill="#15803d" text-anchor="middle">${escapeXml(step.products.slice(1).join(" "))}</text>` : ""}
+          <g transform="translate(${28 + boxReactantW + arrowW + 10}, 62)">
+            <rect x="0" y="0" width="${boxProductW}" height="84" rx="14" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
+            <text x="${boxProductW / 2}" y="${step.products.length > 1 ? 36 : 48}" font-size="17" font-weight="bold" fill="#166534" text-anchor="middle">${escapeXml(step.products[0] || "")}</text>
+            ${step.products[1] ? `<text x="${boxProductW / 2}" y="64" font-size="15" font-weight="bold" font-family="monospace" fill="#15803d" text-anchor="middle">${escapeXml(step.products.slice(1).join(" "))}</text>` : ""}
           </g>
           
           <!-- Curved Arrow & Intermediate Note Box -->
-          <g transform="translate(24, 134)">
-            <rect x="0" y="0" width="${cardW - 48}" height="42" rx="8" fill="#f1f5f9"/>
-            <text x="14" y="26" font-size="13" fill="#334155">
+          <g transform="translate(28, 160)">
+            <rect x="0" y="0" width="${cardW - 56}" height="52" rx="10" fill="#f1f5f9" stroke="#e2e8f0"/>
+            <text x="18" y="32" font-size="15" fill="#1e293b">
               <tspan font-weight="bold" fill="#0284c7">⚡ Electron Movement &amp; Intermediate: </tspan>${escapeXml(step.note)}
             </text>
           </g>
         </g>
       `;
-      curY += stepH + 20;
+      curY += stepH + 28;
     });
 
     svg += `</svg>`;
@@ -386,47 +386,47 @@ export class DiagramComposer {
   }
 
   /**
-   * Generates a spacious resonance contributor SVG diagram
+   * Generates a giant resonance contributor SVG diagram
    */
   public static createResonanceSvg(resData: { title: string; explanation: string; forms: Array<{ name: string; formula: string; charge: string }> }): string {
-    const tileW = 210;
-    const tileH = 170;
-    const arrowW = 80;
+    const tileW = 270;
+    const tileH = 220;
+    const arrowW = 100;
     const count = resData.forms.length;
-    const totalW = 80 + count * tileW + (count - 1) * arrowW + 80;
-    const totalH = 300;
+    const totalW = 100 + count * tileW + (count - 1) * arrowW + 100;
+    const totalH = 380;
 
     let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalW} ${totalH}" width="${totalW}" height="${totalH}" style="background-color:#ffffff; font-family:system-ui,-apple-system,sans-serif;">
       <!-- Title -->
-      <text x="${totalW / 2}" y="36" font-size="20" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(resData.title)}</text>
-      <text x="${totalW / 2}" y="62" font-size="14" fill="#64748b" text-anchor="middle">${escapeXml(resData.explanation)}</text>
+      <text x="${totalW / 2}" y="44" font-size="26" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(resData.title)}</text>
+      <text x="${totalW / 2}" y="76" font-size="16" fill="#64748b" text-anchor="middle">${escapeXml(resData.explanation)}</text>
       
       <!-- Brackets [ ... ] -->
-      <path d="M 50,85 L 30,85 L 30,${totalH - 35} L 50,${totalH - 35}" fill="none" stroke="#64748b" stroke-width="4" stroke-linecap="round"/>
-      <path d="M ${totalW - 50},85 L ${totalW - 30},85 L ${totalW - 30},${totalH - 35} L ${totalW - 50},${totalH - 35}" fill="none" stroke="#64748b" stroke-width="4" stroke-linecap="round"/>
+      <path d="M 60,105 L 35,105 L 35,${totalH - 45} L 60,${totalH - 45}" fill="none" stroke="#475569" stroke-width="5" stroke-linecap="round"/>
+      <path d="M ${totalW - 60},105 L ${totalW - 35},105 L ${totalW - 35},${totalH - 45} L ${totalW - 60},${totalH - 45}" fill="none" stroke="#475569" stroke-width="5" stroke-linecap="round"/>
     `;
 
-    let curX = 65;
-    const midY = 85 + tileH / 2;
+    let curX = 80;
+    const midY = 105 + tileH / 2;
 
     resData.forms.forEach((f, i) => {
       if (i > 0) {
         // Double headed arrow <-->
         svg += `
-          <line x1="${curX + 12}" y1="${midY}" x2="${curX + arrowW - 12}" y2="${midY}" stroke="#0f172a" stroke-width="3"/>
-          <polygon points="${curX + 12},${midY} ${curX + 24},${midY - 6} ${curX + 24},${midY + 6}" fill="#0f172a"/>
-          <polygon points="${curX + arrowW - 12},${midY} ${curX + arrowW - 24},${midY - 6} ${curX + arrowW - 24},${midY + 6}" fill="#0f172a"/>
+          <line x1="${curX + 15}" y1="${midY}" x2="${curX + arrowW - 15}" y2="${midY}" stroke="#0f172a" stroke-width="4"/>
+          <polygon points="${curX + 15},${midY} ${curX + 30},${midY - 8} ${curX + 30},${midY + 8}" fill="#0f172a"/>
+          <polygon points="${curX + arrowW - 15},${midY} ${curX + arrowW - 30},${midY - 8} ${curX + arrowW - 30},${midY + 8}" fill="#0f172a"/>
         `;
         curX += arrowW;
       }
 
       svg += `
         <!-- Form Tile -->
-        <rect x="${curX}" y="85" width="${tileW}" height="${tileH}" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
-        <text x="${curX + tileW / 2}" y="118" font-size="16" font-weight="bold" fill="#0369a1" text-anchor="middle">${escapeXml(f.name)}</text>
-        <rect x="${curX + 18}" y="135" width="${tileW - 36}" height="60" rx="8" fill="#e2e8f0"/>
-        <text x="${curX + tileW / 2}" y="172" font-size="14" font-weight="bold" font-family="monospace" fill="#1e293b" text-anchor="middle">${escapeXml(f.formula)}</text>
-        <text x="${curX + tileW / 2}" y="232" font-size="12" font-weight="bold" fill="#dc2626" text-anchor="middle">${escapeXml(f.charge)}</text>
+        <rect x="${curX}" y="105" width="${tileW}" height="${tileH}" rx="18" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2.5"/>
+        <text x="${curX + tileW / 2}" y="145" font-size="19" font-weight="bold" fill="#0369a1" text-anchor="middle">${escapeXml(f.name)}</text>
+        <rect x="${curX + 24}" y="165" width="${tileW - 48}" height="80" rx="10" fill="#e2e8f0"/>
+        <text x="${curX + tileW / 2}" y="212" font-size="17" font-weight="bold" font-family="monospace" fill="#1e293b" text-anchor="middle">${escapeXml(f.formula)}</text>
+        <text x="${curX + tileW / 2}" y="295" font-size="15" font-weight="bold" fill="#dc2626" text-anchor="middle">${escapeXml(f.charge)}</text>
       `;
       curX += tileW;
     });
@@ -436,36 +436,36 @@ export class DiagramComposer {
   }
 
   /**
-   * Generates a spacious side-by-side molecular comparison SVG grid
+   * Generates a giant side-by-side molecular comparison SVG grid
    */
   public static createComparisonSvg(compounds: Array<{ name: string; formula?: string; mw?: number; smiles?: string; imgBase64?: string }>, title: string = "Structure Comparison"): string {
-    const tileW = 280;
-    const tileH = 280;
-    const gap = 30;
+    const tileW = 360;
+    const tileH = 340;
+    const gap = 36;
     const cols = compounds.length;
-    const totalW = 60 + cols * tileW + (cols - 1) * gap + 60;
-    const totalH = tileH + 110;
+    const totalW = 80 + cols * tileW + (cols - 1) * gap + 80;
+    const totalH = tileH + 130;
 
     let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalW} ${totalH}" width="${totalW}" height="${totalH}" style="background-color:#ffffff; font-family:system-ui,-apple-system,sans-serif;">
       <!-- Title -->
-      <text x="${totalW / 2}" y="38" font-size="20" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(title)}</text>
+      <text x="${totalW / 2}" y="44" font-size="26" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(title)}</text>
     `;
 
-    let curX = 60;
+    let curX = 80;
     compounds.forEach((c) => {
       svg += `
         <!-- Molecule Card -->
-        <rect x="${curX}" y="60" width="${tileW}" height="${tileH}" rx="16" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
-        <text x="${curX + tileW / 2}" y="92" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(c.name)}</text>
-        <text x="${curX + tileW / 2}" y="114" font-size="13" font-weight="600" fill="#0284c7" text-anchor="middle">${c.formula ? `Formula: ${c.formula}` : ""}${c.mw ? ` | MW: ${c.mw}` : ""}</text>
+        <rect x="${curX}" y="70" width="${tileW}" height="${tileH}" rx="18" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2.5"/>
+        <text x="${curX + tileW / 2}" y="106" font-size="20" font-weight="bold" fill="#0f172a" text-anchor="middle">${escapeXml(c.name)}</text>
+        <text x="${curX + tileW / 2}" y="132" font-size="15" font-weight="bold" fill="#0284c7" text-anchor="middle">${c.formula ? `Formula: ${c.formula}` : ""}${c.mw ? ` | MW: ${c.mw}` : ""}</text>
       `;
 
       if (c.imgBase64) {
-        svg += `<image href="data:image/png;base64,${c.imgBase64}" x="${curX + 20}" y="125" width="${tileW - 40}" height="140" preserveAspectRatio="xMidYMid meet"/>`;
+        svg += `<image href="data:image/png;base64,${c.imgBase64}" x="${curX + 24}" y="145" width="${tileW - 48}" height="170" preserveAspectRatio="xMidYMid meet"/>`;
       } else {
         svg += `
-          <rect x="${curX + 20}" y="125" width="${tileW - 40}" height="140" rx="10" fill="#e2e8f0"/>
-          <text x="${curX + tileW / 2}" y="200" font-size="14" font-weight="bold" font-family="monospace" fill="#334155" text-anchor="middle">${escapeXml(c.smiles || c.name)}</text>
+          <rect x="${curX + 24}" y="145" width="${tileW - 48}" height="170" rx="12" fill="#e2e8f0"/>
+          <text x="${curX + tileW / 2}" y="240" font-size="18" font-weight="bold" font-family="monospace" fill="#334155" text-anchor="middle">${escapeXml(c.smiles || c.name)}</text>
         `;
       }
 
