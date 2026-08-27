@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: organic-chemistry-mcp
+    env: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: PYTHON_ENGINE_URL
+        value: http://127.0.0.1:8000
+      - key: ALLOWED_ORIGINS
+        value: "*"

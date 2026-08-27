@@ -1,11 +1,27 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "dist/public",
   "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/((?!api/|mcp/|health).*)",
+      "source": "/api/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/health",
+      "destination": "/api"
+    },
+    {
+      "source": "/mcp/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/mcp",
+      "destination": "/api"
+    },
+    {
+      "source": "/((?!api|health|mcp).*)",
       "destination": "/index.html"
     }
   ]

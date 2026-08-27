@@ -48,14 +48,30 @@ export class ChemistryDatabase {
   private presetMap: Map<string, ChemicalPreset> = new Map();
 
   constructor(dbPath: string = "chem_cache.db") {
-    const dir = path.dirname(dbPath);
-    if (dir && dir !== "." && !fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    let effectivePath = dbPath;
+    if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+      effectivePath = ":memory:";
+    }
+
+    try {
+      if (effectivePath !== ":memory:") {
+        const dir = path.dirname(effectivePath);
+        if (dir && dir !== "." && !fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+      }
+      this.db = new Database(effectivePath);
+    } catch {
+      this.db = new Database(":memory:");
+    }
+
+    try {
+      this.db.pragma("journal_mode = WAL");
+      this.db.pragma("synchronous = NORMAL");
+    } catch {
+      // Memory DB pragma safe fallback
     }
     
-    this.db = new Database(dbPath);
-    this.db.pragma("journal_mode = WAL");
-    this.db.pragma("synchronous = NORMAL");
     this.initSchema();
     this.initPresetsIndex();
   }
@@ -109,13 +125,9 @@ export class ChemistryDatabase {
 
   private initPresetsIndex() {
     for (const preset of CHEMICAL_PRESETS) {
-      // Index by id
       this.presetMap.set(preset.id.toLowerCase().trim(), preset);
-      // Index by name
       this.presetMap.set(preset.name.toLowerCase().trim(), preset);
-      // Index by SMILES
       this.presetMap.set(preset.smiles.trim(), preset);
-      // Index by synonyms
       for (const syn of preset.synonyms) {
         this.presetMap.set(syn.toLowerCase().trim(), preset);
       }
@@ -133,7 +145,6 @@ export class ChemistryDatabase {
     if (this.presetMap.has(q)) {
       return this.presetMap.get(q);
     }
-    // Also try exact SMILES match
     if (this.presetMap.has(query.trim())) {
       return this.presetMap.get(query.trim());
     }
@@ -151,7 +162,6 @@ export class ChemistryDatabase {
     `);
     const row: any = stmt.get(norm);
     if (row) {
-      // Increment hit count and update last_accessed
       this.db.prepare(`
         UPDATE compounds_cache 
         SET hit_count = hit_count + 1, last_accessed = ? 
@@ -320,6 +330,10 @@ export class ChemistryDatabase {
   }
 
   public close() {
-    this.db.close();
+    try {
+      this.db.close();
+    } catch {
+      // ignore
+    }
   }
 }

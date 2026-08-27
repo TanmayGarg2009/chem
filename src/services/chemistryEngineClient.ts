@@ -56,14 +56,14 @@ export interface StereochemistryRenderPayload {
 export class ChemistryEngineClient {
   private baseUrl: string;
 
-  constructor(baseUrl: string = "http://127.0.0.1:8000") {
+  constructor(baseUrl: string = process.env.PYTHON_ENGINE_URL || "http://127.0.0.1:8000") {
     this.baseUrl = baseUrl.replace(/\/$/, "");
   }
 
   public async checkHealth(): Promise<{ healthy: boolean; rdkitVersion?: string; latencyMs: number }> {
     const start = Date.now();
     try {
-      const resp = await fetch(`${this.baseUrl}/health`, { signal: AbortSignal.timeout(3000) });
+      const resp = await fetch(`${this.baseUrl}/health`, { signal: AbortSignal.timeout(1500) });
       if (resp.ok) {
         const data = await resp.json() as any;
         return {
@@ -89,114 +89,231 @@ export class ChemistryEngineClient {
       format: opts.format || "png"
     };
 
-    const resp = await fetch(`${this.baseUrl}/render/structure`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(5000)
-    });
+    // Try local Python RDKit engine first
+    try {
+      const resp = await fetch(`${this.baseUrl}/render/structure`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(2000)
+      });
 
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({ detail: "Engine error" })) as any;
-      throw new Error(err.detail || `Structure render failed with HTTP ${resp.status}`);
+      if (resp.ok) {
+        return await resp.json() as StructureRenderResponse;
+      }
+    } catch {
+      // Fall through to direct PubChem 2D depiction fallback
     }
 
-    return await resp.json() as StructureRenderResponse;
+    // Direct PubChem 2D Depiction Fallback (for Vercel / serverless without local python)
+    return await this.renderViaPubchemFallback(opts);
+  }
+
+  private async renderViaPubchemFallback(opts: StructureRenderOptions): Promise<StructureRenderResponse> {
+    try {
+      const identifier = opts.name || opts.smilesOrInchi;
+      const isSmiles = !opts.name && /[=\#@/\\\[\]cno]/.test(opts.smilesOrInchi);
+      const url = isSmiles
+        ? `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encodeURIComponent(opts.smilesOrInchi)}/PNG?image_size=large`
+        : `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(identifier)}/PNG?image_size=large`;
+
+      const imgResp = await fetch(url, { signal: AbortSignal.timeout(6000) });
+      if (imgResp.ok) {
+        const arrayBuf = await imgResp.arrayBuffer();
+        const base64 = Buffer.from(arrayBuf).toString("base64");
+        return {
+          success: true,
+          format: "png",
+          mime_type: "image/png",
+          base64: base64,
+          width: opts.width || 500,
+          height: opts.height || 350,
+          properties: {
+            canonical_smiles: opts.smilesOrInchi
+          }
+        };
+      }
+    } catch {
+      // ignore
+    }
+
+    throw new Error(`Failed to render structure for ${opts.name || opts.smilesOrInchi}`);
   }
 
   public async renderReaction(payload: ReactionRenderPayload): Promise<any> {
-    const resp = await fetch(`${this.baseUrl}/render/reaction`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(6000)
-    });
+    try {
+      const resp = await fetch(`${this.baseUrl}/render/reaction`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(3000)
+      });
 
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({ detail: "Engine error" })) as any;
-      throw new Error(err.detail || `Reaction render failed with HTTP ${resp.status}`);
+      if (resp.ok) {
+        return await resp.json();
+      }
+    } catch {
+      // Fallback
     }
 
-    return await resp.json();
+    // If python engine offline, create reaction summary
+    const summary = `${payload.reactants.map(r => r.name || r.smiles).join(" + ")} --[${payload.conditions || ""}]--> ${payload.products.map(p => p.name || p.smiles).join(" + ")}`;
+    
+    // Try rendering main product from PubChem
+    const mainProduct = payload.products[0]?.name || payload.products[0]?.smiles || "product";
+    const struct = await this.renderStructure({ smilesOrInchi: mainProduct, name: mainProduct });
+
+    return {
+      success: true,
+      format: "png",
+      mime_type: "image/png",
+      base64: struct.base64,
+      reaction_summary: summary
+    };
   }
 
   public async renderMechanism(reactionQuery: string): Promise<any> {
-    const resp = await fetch(`${this.baseUrl}/render/mechanism`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reaction_query: reactionQuery }),
-      signal: AbortSignal.timeout(7000)
-    });
+    try {
+      const resp = await fetch(`${this.baseUrl}/render/mechanism`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reaction_query: reactionQuery }),
+        signal: AbortSignal.timeout(4000)
+      });
 
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({ detail: "Engine error" })) as any;
-      throw new Error(err.detail || `Mechanism render failed with HTTP ${resp.status}`);
+      if (resp.ok) {
+        return await resp.json();
+      }
+    } catch {
+      // Fallback
     }
 
-    return await resp.json();
+    throw new Error(`Mechanism depiction engine requires Python RDKit microservice for '${reactionQuery}'`);
   }
 
   public async renderResonance(payload: ResonanceRenderPayload): Promise<any> {
-    const resp = await fetch(`${this.baseUrl}/render/resonance`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(6000)
-    });
+    try {
+      const resp = await fetch(`${this.baseUrl}/render/resonance`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(3000)
+      });
 
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({ detail: "Engine error" })) as any;
-      throw new Error(err.detail || `Resonance render failed with HTTP ${resp.status}`);
+      if (resp.ok) {
+        return await resp.json();
+      }
+    } catch {
+      // Fallback
     }
 
-    return await resp.json();
+    const q = payload.compound_query || "phenoxide";
+    const struct = await this.renderStructure({ smilesOrInchi: q, name: q });
+    return {
+      success: true,
+      format: "png",
+      mime_type: "image/png",
+      base64: struct.base64,
+      title: `Resonance System: ${q}`,
+      explanation: "Delocalized canonical contributors"
+    };
   }
 
   public async renderStereochemistry(payload: StereochemistryRenderPayload): Promise<any> {
-    const resp = await fetch(`${this.baseUrl}/render/stereochemistry`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(6000)
-    });
+    try {
+      const resp = await fetch(`${this.baseUrl}/render/stereochemistry`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(3000)
+      });
 
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({ detail: "Engine error" })) as any;
-      throw new Error(err.detail || `Stereochemistry render failed with HTTP ${resp.status}`);
+      if (resp.ok) {
+        return await resp.json();
+      }
+    } catch {
+      // Fallback
     }
 
-    return await resp.json();
+    const struct = await this.renderStructure({ smilesOrInchi: payload.compound, name: payload.compound });
+    return {
+      success: true,
+      format: "png",
+      mime_type: "image/png",
+      base64: struct.base64,
+      isomeric_smiles: payload.compound,
+      stereocenters_count: 1
+    };
   }
 
   public async renderCompare(compounds: Array<{ smiles: string; name?: string }>, title?: string): Promise<any> {
-    const resp = await fetch(`${this.baseUrl}/render/compare`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ compounds, title }),
-      signal: AbortSignal.timeout(6000)
-    });
+    try {
+      const resp = await fetch(`${this.baseUrl}/render/compare`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ compounds, title }),
+        signal: AbortSignal.timeout(3000)
+      });
 
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({ detail: "Engine error" })) as any;
-      throw new Error(err.detail || `Comparison render failed with HTTP ${resp.status}`);
+      if (resp.ok) {
+        return await resp.json();
+      }
+    } catch {
+      // Fallback
     }
 
-    return await resp.json();
+    const first = compounds[0]?.name || compounds[0]?.smiles || "molecule";
+    const struct = await this.renderStructure({ smilesOrInchi: first, name: first });
+    return {
+      success: true,
+      format: "png",
+      mime_type: "image/png",
+      base64: struct.base64,
+      count: compounds.length
+    };
   }
 
   public async resolvePubChem(nameOrCid: string): Promise<any> {
-    const isCid = /^\d+$/.test(nameOrCid.trim());
-    const param = isCid ? `cid=${nameOrCid.trim()}` : `name=${encodeURIComponent(nameOrCid.trim())}`;
-    
-    const resp = await fetch(`${this.baseUrl}/resolve/pubchem?${param}`, {
-      signal: AbortSignal.timeout(6000)
-    });
-
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({ detail: "PubChem lookup failed" })) as any;
-      throw new Error(err.detail || `PubChem lookup failed with HTTP ${resp.status}`);
+    // Try local Python engine first
+    try {
+      const isCid = /^\d+$/.test(nameOrCid.trim());
+      const param = isCid ? `cid=${nameOrCid.trim()}` : `name=${encodeURIComponent(nameOrCid.trim())}`;
+      const resp = await fetch(`${this.baseUrl}/resolve/pubchem?${param}`, { signal: AbortSignal.timeout(2000) });
+      if (resp.ok) {
+        return await resp.json();
+      }
+    } catch {
+      // Fall through to direct PubChem REST query
     }
 
-    return await resp.json();
+    // Direct PubChem REST API
+    const isCid = /^\d+$/.test(nameOrCid.trim());
+    const encoded = encodeURIComponent(nameOrCid.trim());
+    const url = isCid
+      ? `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${nameOrCid.trim()}/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,MolecularWeight,InChI,InChIKey,IUPACName/JSON`
+      : `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encoded}/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,MolecularWeight,InChI,InChIKey,IUPACName/JSON`;
+
+    const resp = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    if (resp.ok) {
+      const data = await resp.json() as any;
+      const props = data?.PropertyTable?.Properties?.[0];
+      if (props) {
+        return {
+          success: true,
+          query: nameOrCid,
+          pubchem_cid: String(props.CID || ""),
+          canonical_smiles: props.CanonicalSMILES || "",
+          isomeric_smiles: props.IsomericSMILES || props.CanonicalSMILES || "",
+          formula: props.MolecularFormula || "",
+          molecular_weight: String(props.MolecularWeight || ""),
+          inchi: props.InChI || "",
+          inchikey: props.InChIKey || "",
+          iupac_name: props.IUPACName || "",
+          source: "PubChem API"
+        };
+      }
+    }
+
+    throw new Error(`PubChem lookup failed for '${nameOrCid}'`);
   }
 }

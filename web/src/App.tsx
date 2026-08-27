@@ -180,15 +180,17 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ compound: q, show_name: true, show_formula: true })
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
       if (!res.ok) {
-        if (data.status === 'ambiguous') {
+        if (data && data.status === 'ambiguous') {
           setStructResult(data);
         } else {
-          setStructError(data.error?.message || data.error || 'Failed to resolve compound');
+          setStructError(data?.error?.message || data?.error || `Request failed with HTTP ${res.status}`);
         }
-      } else {
+      } else if (data) {
         setStructResult(data);
+      } else {
+        setStructError('No response data received from server');
       }
     } catch (err: any) {
       setStructError(err.message || 'Network error');
@@ -215,9 +217,9 @@ export default function App() {
           conditions: conditionsInput.trim() || undefined
         })
       });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setReactionError(data.error || 'Failed to render reaction');
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        setReactionError(data?.error || `Reaction render failed with HTTP ${res.status}`);
       } else {
         setReactionResult(data);
       }
@@ -241,9 +243,9 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: q })
       });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setMechError(data.error || 'Failed to render mechanism');
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        setMechError(data?.error || `Mechanism render failed with HTTP ${res.status}`);
       } else {
         setMechResult(data);
       }
@@ -267,9 +269,9 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ compound: q })
       });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setResError(data.error || 'Failed to render resonance');
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        setResError(data?.error || `Resonance render failed with HTTP ${res.status}`);
       } else {
         setResResult(data);
       }
@@ -295,9 +297,9 @@ export default function App() {
           configuration: stereoConfig
         })
       });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setStereoError(data.error || 'Failed to render stereochemistry');
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        setStereoError(data?.error || `Stereochemistry render failed with HTTP ${res.status}`);
       } else {
         setStereoResult(data);
       }
@@ -335,14 +337,14 @@ export default function App() {
       let resData = null;
       if (inspectorTool === 'resolve_compound') {
         const res = await fetch(endpoint);
-        resData = await res.json();
+        resData = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
       } else {
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(parsedArgs)
         });
-        resData = await res.json();
+        resData = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
       }
 
       setInspectorResponse({
@@ -397,11 +399,11 @@ export default function App() {
               <span className="text-slate-200 font-mono font-medium">/mcp</span>
             </div>
 
-            {/* RDKit Engine Pill */}
+            {/* Engine Pill */}
             <div className="flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-slate-800/60 border border-slate-700/50 text-xs">
-              <div className={`w-2 h-2 rounded-full ${health?.chemistry_engine?.status === 'connected' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-              <span className="text-slate-400">RDKit:</span>
-              <span className="text-slate-200 font-mono font-medium">{health?.chemistry_engine?.rdkit_version || 'Loading...'}</span>
+              <div className={`w-2 h-2 rounded-full ${health?.chemistry_engine?.status === 'connected' ? 'bg-emerald-400' : 'bg-teal-400'}`} />
+              <span className="text-slate-400">Engine:</span>
+              <span className="text-slate-200 font-mono font-medium">{health?.chemistry_engine?.status === 'connected' ? `RDKit v${health?.chemistry_engine?.rdkit_version}` : 'PubChem 2D (Cloud)'}</span>
             </div>
 
             {/* Refresh Button */}
