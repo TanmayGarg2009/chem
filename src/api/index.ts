@@ -245,15 +245,50 @@ export function createExpressApp(
     }
   });
 
+  // Direct Render: Compare
+  app.post("/api/render/compare", async (req: Request, res: Response) => {
+    try {
+      const { compounds, title } = req.body;
+      if (!compounds || !Array.isArray(compounds)) {
+        res.status(400).json({ error: "Missing 'compounds' array" });
+        return;
+      }
+      const resolvedList = [];
+      for (const c of compounds) {
+        const query = typeof c === "string" ? c : c.name || c.smiles;
+        const resObj = await resolver.resolve(query);
+        if (resObj.status === "resolved") {
+          resolvedList.push({
+            name: resObj.compound.name,
+            smiles: resObj.compound.canonicalSmiles,
+            formula: resObj.compound.formula,
+            mw: resObj.compound.molecularWeight
+          });
+        } else {
+          resolvedList.push({
+            name: query,
+            smiles: typeof c === "string" ? c : c.smiles || query
+          });
+        }
+      }
+
+      const result = await engine.renderCompare(resolvedList, title);
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // --- 4. Static Dashboard Serving ---
   const staticPath = options.staticDir || path.join(process.cwd(), "dist", "public");
   if (fs.existsSync(staticPath)) {
     app.use(express.static(staticPath));
-    app.get("*", (_req: Request, res: Response, next: NextFunction) => {
-      if (_req.path.startsWith("/api") || _req.path.startsWith("/mcp") || _req.path.startsWith("/health")) {
-        return next();
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      if (req.method === "GET" && !req.path.startsWith("/api") && !req.path.startsWith("/mcp") && !req.path.startsWith("/health")) {
+        res.sendFile(path.join(staticPath, "index.html"));
+      } else {
+        next();
       }
-      res.sendFile(path.join(staticPath, "index.html"));
     });
   }
 

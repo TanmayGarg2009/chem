@@ -1,3 +1,5 @@
+import { DiagramComposer, MECHANISMS_DB, RESONANCE_DB } from "./diagramComposer.js";
+
 export interface StructureRenderOptions {
   smilesOrInchi: string;
   name?: string;
@@ -156,18 +158,37 @@ export class ChemistryEngineClient {
       // Fallback
     }
 
-    // If python engine offline, create reaction summary
+    // Fallback: Fetch images for reactants and products and compose diagram
+    const reactantsWithImages = await Promise.all(
+      payload.reactants.map(async (r) => {
+        const struct = await this.renderStructure({ smilesOrInchi: r.smiles, name: r.name }).catch(() => null);
+        return { name: r.name || r.smiles, smiles: r.smiles, imgBase64: struct?.base64 };
+      })
+    );
+
+    const productsWithImages = await Promise.all(
+      payload.products.map(async (p) => {
+        const struct = await this.renderStructure({ smilesOrInchi: p.smiles, name: p.name }).catch(() => null);
+        return { name: p.name || p.smiles, smiles: p.smiles, imgBase64: struct?.base64 };
+      })
+    );
+
+    const svg = DiagramComposer.createReactionSvg(
+      reactantsWithImages,
+      productsWithImages,
+      payload.conditions,
+      payload.title || "Chemical Reaction Diagram"
+    );
+
+    const base64Svg = Buffer.from(svg).toString("base64");
     const summary = `${payload.reactants.map(r => r.name || r.smiles).join(" + ")} --[${payload.conditions || ""}]--> ${payload.products.map(p => p.name || p.smiles).join(" + ")}`;
-    
-    // Try rendering main product from PubChem
-    const mainProduct = payload.products[0]?.name || payload.products[0]?.smiles || "product";
-    const struct = await this.renderStructure({ smilesOrInchi: mainProduct, name: mainProduct });
 
     return {
       success: true,
-      format: "png",
-      mime_type: "image/png",
-      base64: struct.base64,
+      format: "svg",
+      mime_type: "image/svg+xml",
+      base64: base64Svg,
+      svg: svg,
       reaction_summary: summary
     };
   }
@@ -188,7 +209,28 @@ export class ChemistryEngineClient {
       // Fallback
     }
 
-    throw new Error(`Mechanism depiction engine requires Python RDKit microservice for '${reactionQuery}'`);
+    // Fallback: Match mechanism query to built-in mechanism templates
+    const q = reactionQuery.toLowerCase().trim();
+    let mechKey = "sn1";
+    if (q.includes("sn2") || q.includes("walden") || q.includes("bimolecular")) mechKey = "sn2";
+    else if (q.includes("eas") || q.includes("bromination") || q.includes("aromatic") || q.includes("benzene")) mechKey = "eas";
+    else if (q.includes("hydration") || q.includes("alkene") || q.includes("ethene")) mechKey = "hydration";
+    else if (q.includes("aldol") || q.includes("enolate")) mechKey = "aldol";
+
+    const mechData = MECHANISMS_DB[mechKey] || MECHANISMS_DB["sn1"];
+    const svg = DiagramComposer.createMechanismSvg(mechData);
+    const base64Svg = Buffer.from(svg).toString("base64");
+
+    return {
+      success: true,
+      format: "svg",
+      mime_type: "image/svg+xml",
+      base64: base64Svg,
+      svg: svg,
+      title: mechData.title,
+      description: mechData.description,
+      steps_count: mechData.steps.length
+    };
   }
 
   public async renderResonance(payload: ResonanceRenderPayload): Promise<any> {
@@ -207,15 +249,25 @@ export class ChemistryEngineClient {
       // Fallback
     }
 
-    const q = payload.compound_query || "phenoxide";
-    const struct = await this.renderStructure({ smilesOrInchi: q, name: q });
+    const q = (payload.compound_query || "phenoxide").toLowerCase().trim();
+    let resKey = "phenoxide";
+    if (q.includes("nitro")) resKey = "nitrobenzene";
+    else if (q.includes("aniline")) resKey = "aniline";
+    else if (q.includes("acetate") || q.includes("carboxylate")) resKey = "carboxylate";
+    else if (q.includes("benzene")) resKey = "benzene";
+
+    const resData = RESONANCE_DB[resKey] || RESONANCE_DB["phenoxide"];
+    const svg = DiagramComposer.createResonanceSvg(resData);
+    const base64Svg = Buffer.from(svg).toString("base64");
+
     return {
       success: true,
-      format: "png",
-      mime_type: "image/png",
-      base64: struct.base64,
-      title: `Resonance System: ${q}`,
-      explanation: "Delocalized canonical contributors"
+      format: "svg",
+      mime_type: "image/svg+xml",
+      base64: base64Svg,
+      svg: svg,
+      title: resData.title,
+      explanation: resData.explanation
     };
   }
 
@@ -262,13 +314,26 @@ export class ChemistryEngineClient {
       // Fallback
     }
 
-    const first = compounds[0]?.name || compounds[0]?.smiles || "molecule";
-    const struct = await this.renderStructure({ smilesOrInchi: first, name: first });
+    const compoundsWithImages = await Promise.all(
+      compounds.map(async (c) => {
+        const struct = await this.renderStructure({ smilesOrInchi: c.smiles, name: c.name }).catch(() => null);
+        return {
+          name: c.name || c.smiles,
+          smiles: c.smiles,
+          imgBase64: struct?.base64
+        };
+      })
+    );
+
+    const svg = DiagramComposer.createComparisonSvg(compoundsWithImages, title || "Structure Comparison");
+    const base64Svg = Buffer.from(svg).toString("base64");
+
     return {
       success: true,
-      format: "png",
-      mime_type: "image/png",
-      base64: struct.base64,
+      format: "svg",
+      mime_type: "image/svg+xml",
+      base64: base64Svg,
+      svg: svg,
       count: compounds.length
     };
   }

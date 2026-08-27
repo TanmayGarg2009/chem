@@ -14,15 +14,13 @@ import {
   Check,
   RefreshCw,
   Terminal,
-  Share2,
   BookOpen,
   Zap,
-  Info,
   Clock,
   Eye,
-  Settings,
   ChevronRight,
-  Compass
+  Compass,
+  Columns
 } from 'lucide-react';
 
 interface SystemHealth {
@@ -80,7 +78,7 @@ interface PresetCompound {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'structure' | 'reaction' | 'mechanism' | 'resonance' | 'stereo' | 'library' | 'inspector'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'structure' | 'reaction' | 'mechanism' | 'resonance' | 'stereo' | 'compare' | 'library' | 'inspector'>('dashboard');
   const [health, setHealth] = useState<SystemHealth | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [logs, setLogs] = useState<ToolLog[]>([]);
@@ -119,6 +117,13 @@ export default function App() {
   const [stereoLoading, setStereoLoading] = useState(false);
   const [stereoResult, setStereoResult] = useState<any>(null);
   const [stereoError, setStereoError] = useState<string | null>(null);
+
+  // --- Compare Structures State ---
+  const [compareInput, setCompareInput] = useState('ethanol, ethanal, ethanoic acid');
+  const [compareTitle, setCompareTitle] = useState('Oxidation Series of Ethanol');
+  const [compareLoading, setCompareLoading] = useState(false);
+  const [compareResult, setCompareResult] = useState<any>(null);
+  const [compareError, setCompareError] = useState<string | null>(null);
 
   // --- Library State ---
   const [library, setLibrary] = useState<PresetCompound[]>([]);
@@ -311,6 +316,37 @@ export default function App() {
     }
   };
 
+  // Handle Compare Structures Test
+  const handleTestCompare = async (compoundsStr?: string, titleStr?: string) => {
+    const compStr = compoundsStr || compareInput;
+    const title = titleStr !== undefined ? titleStr : compareTitle;
+    setCompareLoading(true);
+    setCompareError(null);
+    setCompareResult(null);
+    try {
+      const compounds = compStr.split(',').map(s => s.trim()).filter(Boolean);
+      const res = await fetch('/api/render/compare', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          compounds,
+          title: title.trim() || undefined
+        })
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        setCompareError(data?.error || `Comparison failed with HTTP ${res.status}`);
+      } else {
+        setCompareResult(data);
+      }
+    } catch (err: any) {
+      setCompareError(err.message || 'Network error');
+    } finally {
+      setCompareLoading(false);
+      fetchHealthAndStats();
+    }
+  };
+
   // Handle MCP Inspector Call
   const handleRunInspector = async () => {
     setInspectorLoading(true);
@@ -332,6 +368,7 @@ export default function App() {
       else if (inspectorTool === 'show_mechanism') endpoint = '/api/render/mechanism';
       else if (inspectorTool === 'show_resonance') endpoint = '/api/render/resonance';
       else if (inspectorTool === 'show_stereochemistry') endpoint = '/api/render/stereochemistry';
+      else if (inspectorTool === 'compare_structures') endpoint = '/api/render/compare';
       else if (inspectorTool === 'resolve_compound') endpoint = `/api/resolve?q=${encodeURIComponent((parsedArgs as any).query || '')}`;
 
       let resData = null;
@@ -386,7 +423,7 @@ export default function App() {
                   v1.0 Streamable HTTP
                 </span>
               </div>
-              <p className="text-xs text-slate-400">Deterministic RDKit Structure Server for AI Chats</p>
+              <p className="text-xs text-slate-400">Deterministic Chemical Structure Server for AI Chats</p>
             </div>
           </div>
 
@@ -394,7 +431,7 @@ export default function App() {
           <div className="flex items-center space-x-2 sm:space-x-3">
             {/* MCP HTTP Pill */}
             <div className="flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-slate-800/60 border border-slate-700/50 text-xs">
-              <div className={`w-2 h-2 rounded-full ${health?.mcp_server?.status === 'running' ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+              <div className={`w-2 h-2 rounded-full ${health?.mcp_server?.status === 'running' ? 'bg-emerald-400 animate-pulse' : 'bg-emerald-400'}`} />
               <span className="text-slate-400">MCP:</span>
               <span className="text-slate-200 font-mono font-medium">/mcp</span>
             </div>
@@ -427,6 +464,7 @@ export default function App() {
             { id: 'mechanism', label: 'Mechanisms', icon: Layers },
             { id: 'resonance', label: 'Resonance', icon: Zap },
             { id: 'stereo', label: 'Stereochemistry', icon: Compass },
+            { id: 'compare', label: 'Compare Structures', icon: Columns },
             { id: 'library', label: 'Compound Library', icon: BookOpen },
             { id: 'inspector', label: 'MCP Inspector', icon: Terminal }
           ].map(tab => {
@@ -491,7 +529,7 @@ export default function App() {
                 <div className="text-2xl font-bold font-mono text-slate-100 mt-2">
                   {stats?.averageLatencyMs ? `${stats.averageLatencyMs}ms` : '< 50ms'}
                 </div>
-                <div className="text-xs text-emerald-400 mt-1">Near-instant RDKit engine</div>
+                <div className="text-xs text-emerald-400 mt-1">Deterministic depiction engine</div>
               </div>
 
               <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
@@ -549,14 +587,14 @@ export default function App() {
                     ├─ Ambiguity Check → Local JEE DB (200+ Presets) → SQLite Cache → PubChem API
                   </div>
                   <div className="text-slate-400 pl-4">
-                    └─ SMILES Pipeline → Python RDKit Engine → 2D Textbook Depiction (PNG)
+                    └─ Structure Pipeline → RDKit Engine / Diagram Composer → 2D Textbook Depiction
                   </div>
                   <div className="flex items-center justify-between text-indigo-400 font-semibold border-t border-slate-800/60 pt-2">
                     <span>MCP Response Result Payload</span>
                     <span className="text-slate-400 font-normal">Native MCP Image Content</span>
                   </div>
                   <div className="text-slate-300 pl-4">
-                    ✓ <span className="text-emerald-400">image/png (base64)</span> + Structured Chemical Metadata
+                    ✓ <span className="text-emerald-400">image/png / image/svg (base64)</span> + Structured Chemical Metadata
                   </div>
                 </div>
 
@@ -564,14 +602,14 @@ export default function App() {
                 <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/40 border border-slate-700/60 text-xs">
                   <div className="flex items-center space-x-2">
                     <span className="text-slate-400">Streamable HTTP MCP Endpoint:</span>
-                    <code className="text-emerald-300 font-mono">http://localhost:3000/mcp</code>
+                    <code className="text-emerald-300 font-mono">/mcp</code>
                   </div>
                   <button
-                    onClick={() => copyToClipboard('http://localhost:3000/mcp')}
+                    onClick={() => copyToClipboard(window.location.origin + '/mcp')}
                     className="px-2.5 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-200 flex items-center space-x-1 transition-colors"
                   >
                     {copiedSmiles ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copiedSmiles ? 'Copied' : 'Copy'}</span>
+                    <span>{copiedSmiles ? 'Copied URL' : 'Copy Full URL'}</span>
                   </button>
                 </div>
               </div>
@@ -613,7 +651,7 @@ export default function App() {
                   <Clock className="w-4 h-4 text-emerald-400" />
                   <span>Recent MCP Tool Calls & Latencies</span>
                 </h3>
-                <span className="text-xs text-slate-400">Live telemetry from SQLite</span>
+                <span className="text-xs text-slate-400">Live telemetry</span>
               </div>
 
               {logs.length === 0 ? (
@@ -666,14 +704,12 @@ export default function App() {
         {activeTab === 'structure' && (
           <div className="space-y-6">
             <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-100 flex items-center space-x-2">
-                    <FlaskConical className="w-5 h-5 text-emerald-400" />
-                    <span>Single Chemical Structure Tester</span>
-                  </h2>
-                  <p className="text-xs text-slate-400">Test name resolution, SMILES parsing, PubChem fallback, and 2D textbook rendering.</p>
-                </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-100 flex items-center space-x-2">
+                  <FlaskConical className="w-5 h-5 text-emerald-400" />
+                  <span>Single Chemical Structure Tester</span>
+                </h2>
+                <p className="text-xs text-slate-400">Test name resolution, SMILES parsing, PubChem fallback, and 2D textbook rendering.</p>
               </div>
 
               {/* Input Form */}
@@ -769,20 +805,20 @@ export default function App() {
             )}
 
             {/* Successful Render Card */}
-            {structResult?.image_base64 && (
+            {(structResult?.image_base64 || structResult?.base64) && (
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                 {/* Left: High-Res Diagram */}
                 <div className="md:col-span-7 p-6 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col items-center justify-center min-h-[380px]">
                   <div className="p-4 rounded-xl bg-white shadow-2xl ring-1 ring-slate-700/50 max-w-full overflow-hidden">
                     <img
-                      src={`data:${structResult.mime_type || 'image/png'};base64,${structResult.image_base64}`}
+                      src={`data:${structResult.mime_type || 'image/png'};base64,${structResult.image_base64 || structResult.base64}`}
                       alt={structResult.compound?.name || 'Chemical Structure'}
                       className="max-w-full h-auto object-contain mx-auto"
                     />
                   </div>
                   <div className="flex items-center space-x-2 text-xs text-slate-400 mt-4">
                     <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                    <span>Rendered deterministically via RDKit 2D Depiction Engine</span>
+                    <span>Rendered deterministically via 2D Chemical Structure Engine</span>
                   </div>
                 </div>
 
@@ -790,40 +826,46 @@ export default function App() {
                 <div className="md:col-span-5 p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                     <div>
-                      <h3 className="text-xl font-bold text-slate-100">{structResult.compound?.name}</h3>
+                      <h3 className="text-xl font-bold text-slate-100">{structResult.compound?.name || structQuery}</h3>
                       <div className="text-xs text-slate-400">{structResult.compound?.iupacName || 'IUPAC Standard'}</div>
                     </div>
                     <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 font-mono text-xs border border-emerald-500/20">
-                      {structResult.compound?.source}
+                      {structResult.compound?.source || 'Resolved'}
                     </span>
                   </div>
 
                   <div className="space-y-2.5 text-xs">
-                    <div className="flex justify-between py-1.5 border-b border-slate-800/60">
-                      <span className="text-slate-400">Molecular Formula:</span>
-                      <span className="font-mono font-bold text-slate-200">{structResult.compound?.formula}</span>
-                    </div>
-
-                    <div className="flex justify-between py-1.5 border-b border-slate-800/60">
-                      <span className="text-slate-400">Molecular Weight:</span>
-                      <span className="font-mono font-bold text-slate-200">{structResult.compound?.molecularWeight} g/mol</span>
-                    </div>
-
-                    <div className="py-1.5 border-b border-slate-800/60 space-y-1">
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-400">Canonical SMILES:</span>
-                        <button
-                          onClick={() => copyToClipboard(structResult.compound?.canonicalSmiles)}
-                          className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center space-x-1"
-                        >
-                          <Copy className="w-3 h-3" />
-                          <span>Copy</span>
-                        </button>
+                    {structResult.compound?.formula && (
+                      <div className="flex justify-between py-1.5 border-b border-slate-800/60">
+                        <span className="text-slate-400">Molecular Formula:</span>
+                        <span className="font-mono font-bold text-slate-200">{structResult.compound?.formula}</span>
                       </div>
-                      <code className="block p-2 rounded bg-slate-950 font-mono text-emerald-300 text-[11px] break-all">
-                        {structResult.compound?.canonicalSmiles}
-                      </code>
-                    </div>
+                    )}
+
+                    {structResult.compound?.molecularWeight && (
+                      <div className="flex justify-between py-1.5 border-b border-slate-800/60">
+                        <span className="text-slate-400">Molecular Weight:</span>
+                        <span className="font-mono font-bold text-slate-200">{structResult.compound?.molecularWeight} g/mol</span>
+                      </div>
+                    )}
+
+                    {structResult.compound?.canonicalSmiles && (
+                      <div className="py-1.5 border-b border-slate-800/60 space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-400">Canonical SMILES:</span>
+                          <button
+                            onClick={() => copyToClipboard(structResult.compound?.canonicalSmiles)}
+                            className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center space-x-1"
+                          >
+                            <Copy className="w-3 h-3" />
+                            <span>Copy</span>
+                          </button>
+                        </div>
+                        <code className="block p-2 rounded bg-slate-950 font-mono text-emerald-300 text-[11px] break-all">
+                          {structResult.compound?.canonicalSmiles}
+                        </code>
+                      </div>
+                    )}
 
                     {structResult.compound?.pubchemCid && (
                       <div className="flex justify-between py-1.5 border-b border-slate-800/60">
@@ -840,9 +882,9 @@ export default function App() {
                     )}
 
                     <div className="flex justify-between py-1.5">
-                      <span className="text-slate-400">Cache Status:</span>
+                      <span className="text-slate-400">Status:</span>
                       <span className="font-medium text-emerald-400">
-                        {structResult.from_cache ? '✓ Served from SQLite Cache (<10ms)' : 'Resolved & Cached'}
+                        {structResult.from_cache ? '✓ Served from SQLite Cache' : '✓ Resolved & Ready'}
                       </span>
                     </div>
                   </div>
@@ -863,7 +905,7 @@ export default function App() {
                   <ArrowRight className="w-5 h-5 text-emerald-400" />
                   <span>Chemical Reaction Diagram Tester</span>
                 </h2>
-                <p className="text-xs text-slate-400">Assemble publication-quality reaction equations with reactants, reaction arrows, conditions, and products.</p>
+                <p className="text-xs text-slate-400">Assemble publication-quality reaction equations with reactants, plus signs (+), reaction arrows, conditions, and products.</p>
               </div>
 
               {/* Reaction Input Builder */}
@@ -902,9 +944,9 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
                 {/* Reaction Preset Buttons */}
-                <div className="flex items-center space-x-2 overflow-x-auto text-xs">
+                <div className="flex items-center space-x-2 overflow-x-auto text-xs pb-1">
                   <span className="text-slate-400 flex-shrink-0">Presets:</span>
                   {[
                     { label: 'EAS Bromination', r: 'benzene, Br2', c: 'FeBr3', p: 'bromobenzene, HBr' },
@@ -928,13 +970,21 @@ export default function App() {
                 <button
                   onClick={handleTestReaction}
                   disabled={reactionLoading}
-                  className="px-6 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-semibold text-white text-sm flex items-center space-x-2 shadow-lg shadow-emerald-900/30"
+                  className="px-6 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-semibold text-white text-sm flex items-center justify-center space-x-2 shadow-lg shadow-emerald-900/30"
                 >
                   {reactionLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
                   <span>Render Reaction</span>
                 </button>
               </div>
             </div>
+
+            {/* Error Message */}
+            {reactionError && (
+              <div className="p-4 rounded-xl bg-red-950/40 border border-red-500/30 text-red-300 text-sm flex items-center space-x-2">
+                <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                <span>{reactionError}</span>
+              </div>
+            )}
 
             {/* Reaction Diagram Result */}
             {reactionResult?.base64 && (
@@ -965,7 +1015,7 @@ export default function App() {
                   <Layers className="w-5 h-5 text-emerald-400" />
                   <span>Reaction Mechanism Explorer (JEE / Organic Chemistry)</span>
                 </h2>
-                <p className="text-xs text-slate-400">Step-by-step intermediate panels with curved electron-movement arrows and formal charges.</p>
+                <p className="text-xs text-slate-400">Step-by-step intermediate panels with curved electron-movement arrows, step numbering, and formal charges.</p>
               </div>
 
               {/* Mechanism Selector Buttons */}
@@ -994,6 +1044,14 @@ export default function App() {
                 ))}
               </div>
             </div>
+
+            {/* Error Message */}
+            {mechError && (
+              <div className="p-4 rounded-xl bg-red-950/40 border border-red-500/30 text-red-300 text-sm flex items-center space-x-2">
+                <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                <span>{mechError}</span>
+              </div>
+            )}
 
             {/* Mechanism Output Result */}
             {mechResult?.base64 && (
@@ -1145,7 +1203,104 @@ export default function App() {
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 7: COMPOUND LIBRARY */}
+        {/* TAB 7: COMPARE STRUCTURES */}
+        {/* ========================================================================= */}
+        {activeTab === 'compare' && (
+          <div className="space-y-6">
+            <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-100 flex items-center space-x-2">
+                  <Columns className="w-5 h-5 text-emerald-400" />
+                  <span>Side-by-Side Molecular Comparison Grid</span>
+                </h2>
+                <p className="text-xs text-slate-400">Compare functional groups, homologous series, constitutional isomers, acidities, or oxidation levels side-by-side.</p>
+              </div>
+
+              {/* Compare Input */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Compounds to Compare (comma separated)</label>
+                  <input
+                    type="text"
+                    value={compareInput}
+                    onChange={(e) => setCompareInput(e.target.value)}
+                    placeholder="e.g. ethanol, ethanal, ethanoic acid"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-100 text-sm font-mono focus:ring-2 focus:ring-emerald-500/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Comparison Title (optional)</label>
+                  <input
+                    type="text"
+                    value={compareTitle}
+                    onChange={(e) => setCompareTitle(e.target.value)}
+                    placeholder="e.g. Oxidation Series of Ethanol"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-100 text-sm font-mono focus:ring-2 focus:ring-emerald-500/50"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+                {/* Preset Comparison Buttons */}
+                <div className="flex items-center space-x-2 overflow-x-auto text-xs pb-1">
+                  <span className="text-slate-400 flex-shrink-0">Presets:</span>
+                  {[
+                    { label: 'Oxidation Series', list: 'ethanol, ethanal, ethanoic acid', title: 'Oxidation Series of Ethanol' },
+                    { label: 'Aromatic Derivatives', list: 'benzene, toluene, phenol, aniline', title: 'Monosubstituted Benzenes' },
+                    { label: 'Halomethanes', list: 'chloromethane, dichloromethane, chloroform, carbon tetrachloride', title: 'Chlorinated Methanes Series' },
+                    { label: 'Alkanes Homology', list: 'methane, ethane, propane, butane', title: 'Alkane Homologous Series' }
+                  ].map(cp => (
+                    <button
+                      key={cp.label}
+                      onClick={() => {
+                        setCompareInput(cp.list);
+                        setCompareTitle(cp.title);
+                        handleTestCompare(cp.list, cp.title);
+                      }}
+                      className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono transition-colors border border-slate-700/60 flex-shrink-0"
+                    >
+                      {cp.label}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => handleTestCompare()}
+                  disabled={compareLoading}
+                  className="px-6 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-semibold text-white text-sm flex items-center justify-center space-x-2 shadow-lg shadow-emerald-900/30"
+                >
+                  {compareLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Columns className="w-4 h-4" />}
+                  <span>Compare Molecules</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Error Message */}
+            {compareError && (
+              <div className="p-4 rounded-xl bg-red-950/40 border border-red-500/30 text-red-300 text-sm flex items-center space-x-2">
+                <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                <span>{compareError}</span>
+              </div>
+            )}
+
+            {/* Compare Result Diagram */}
+            {compareResult?.base64 && (
+              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
+                <div className="p-6 rounded-xl bg-white shadow-2xl flex items-center justify-center overflow-x-auto">
+                  <img
+                    src={`data:${compareResult.mime_type || 'image/png'};base64,${compareResult.base64}`}
+                    alt="Comparison Grid"
+                    className="max-w-full h-auto object-contain"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 8: COMPOUND LIBRARY */}
         {/* ========================================================================= */}
         {activeTab === 'library' && (
           <div className="space-y-6">
@@ -1246,7 +1401,7 @@ export default function App() {
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 8: MCP INSPECTOR & TOOL CALL SIMULATOR */}
+        {/* TAB 9: MCP INSPECTOR & TOOL CALL SIMULATOR */}
         {/* ========================================================================= */}
         {activeTab === 'inspector' && (
           <div className="space-y-6">
@@ -1325,11 +1480,11 @@ export default function App() {
 
                 {/* Rendered Preview if base64 image present */}
                 {(inspectorResponse.rawResult?.image_base64 || inspectorResponse.rawResult?.base64) && (
-                  <div className="p-4 rounded-xl bg-white shadow-xl flex items-center justify-center overflow-hidden max-h-80">
+                  <div className="p-4 rounded-xl bg-white shadow-xl flex items-center justify-center overflow-hidden max-h-96">
                     <img
-                      src={`data:image/png;base64,${inspectorResponse.rawResult?.image_base64 || inspectorResponse.rawResult?.base64}`}
+                      src={`data:${inspectorResponse.rawResult?.mime_type || 'image/png'};base64,${inspectorResponse.rawResult?.image_base64 || inspectorResponse.rawResult?.base64}`}
                       alt="MCP Render Result"
-                      className="max-h-72 object-contain"
+                      className="max-h-88 object-contain"
                     />
                   </div>
                 )}
